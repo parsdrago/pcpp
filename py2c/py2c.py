@@ -7,7 +7,7 @@ int main(void) {
 }"""
 
 
-class Leaf:
+class AtomicNode:
     def __init__(self, value):
         self.value = value
 
@@ -15,7 +15,7 @@ class Leaf:
         return str(self.value)
 
 
-class Parenthesis:
+class ParenthesisNode:
     def __init__(self, inner):
         self.inner = inner
 
@@ -23,7 +23,7 @@ class Parenthesis:
         return f"({self.inner.evaluate()})"
 
 
-class Node:
+class BinaryOperatorNode:
     def __init__(self, operator, left, right):
         self.operator = operator
         self.left = left
@@ -181,30 +181,30 @@ def parse(tokens):
             result = expr(tokens)
             if tokens.pop(0) != ")":
                 raise Exception("Missing )")
-            return Parenthesis(result)
+            return ParenthesisNode(result)
         if not isinstance(token, int):
             raise Exception("Expected integer, got: " + str(token))
-        return Leaf(token)
+        return AtomicNode(token)
 
     def mul(tokens):
         node = atom(tokens)
         while len(tokens) > 0 and (tokens[0] == "*" or tokens[0] == "/"):
             token = tokens.pop(0)
-            node = Node(token, node, atom(tokens))
+            node = BinaryOperatorNode(token, node, atom(tokens))
         return node
 
     def addi(tokens):
         node = mul(tokens)
         while len(tokens) > 0 and (tokens[0] == "+" or tokens[0] == "-"):
             token = tokens.pop(0)
-            node = Node(token, node, mul(tokens))
+            node = BinaryOperatorNode(token, node, mul(tokens))
         return node
 
     def comp(tokens):
         node = addi(tokens)
         while len(tokens) > 0 and (tokens[0] in ["==", "!=", ">", ">=", "<", "<="]):
             token = tokens.pop(0)
-            node = Node(token, node, addi(tokens))
+            node = BinaryOperatorNode(token, node, addi(tokens))
         return node
 
     def expr(tokens):
