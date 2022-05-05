@@ -15,6 +15,14 @@ class Leaf:
         return str(self.value)
 
 
+class Parenthesis:
+    def __init__(self, inner):
+        self.inner = inner
+
+    def evaluate(self):
+        return f"({self.inner.evaluate()})"
+
+
 class Node:
     def __init__(self, operator, left, right):
         self.operator = operator
@@ -74,7 +82,7 @@ def parse(tokens):
             result = expr(tokens)
             if tokens.pop(0) != ")":
                 raise Exception("Missing )")
-            return Leaf(f"({result.evaluate()})")
+            return Parenthesis(result)
         if not isinstance(token, int):
             raise Exception("Expected integer, got: " + str(token))
         return Leaf(token)
@@ -93,13 +101,14 @@ def parse(tokens):
             node = Node(token, node, mul(tokens))
         return node
 
-    return expr(tokens).evaluate()
+    return expr(tokens)
 
 
 def output_integer(i):
     tokens = tokenize(i)
     parsed = parse(tokens)
-    print(TEMPLATE.replace("{{return value}}", parsed))
+    value = parsed.evaluate()
+    print(TEMPLATE.replace("{{return value}}", value))
 
 
 if __name__ == "__main__":

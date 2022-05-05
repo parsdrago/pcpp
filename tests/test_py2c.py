@@ -45,33 +45,33 @@ def test_tokenize_parenthes():
 
 
 def test_parse_integer():
-    assert py2c.parse([1]) == "1"
+    assert py2c.parse([1]).evaluate() == "1"
 
 
 def test_parse_addition():
-    assert py2c.parse([1, "+", 2]) == "1 + 2"
+    assert py2c.parse([1, "+", 2]).evaluate() == "1 + 2"
 
 
 def test_parse_subtraction():
-    assert py2c.parse([1, "-", 2]) == "1 - 2"
+    assert py2c.parse([1, "-", 2]).evaluate() == "1 - 2"
 
 
 def test_parse_multiplication():
-    assert py2c.parse([1, "*", 2]) == "1 * 2"
+    assert py2c.parse([1, "*", 2]).evaluate() == "1 * 2"
 
 
 def test_parse_division():
-    assert py2c.parse([1, "/", 2]) == "1 / 2"
+    assert py2c.parse([1, "/", 2]).evaluate() == "1 / 2"
 
 
 def test_parse_parenthes():
-    assert py2c.parse(["(", 1, "+", 2, ")"]) == "(1 + 2)"
+    assert py2c.parse(["(", 1, "+", 2, ")"]).evaluate() == "(1 + 2)"
 
 
 def test_parse_parenthes_complicated():
-    assert py2c.parse(["(", 1, "+", 2, ")", "*", 3]) == "(1 + 2) * 3"
+    assert py2c.parse(["(", 1, "+", 2, ")", "*", 3]).evaluate() == "(1 + 2) * 3"
 
     
 def test_parse_parenthes_complicated2():
-    assert py2c.parse(["(", 1, "+", 2, ")", "*", "(", 2, "-", 1, ")"]) == "(1 + 2) * (2 - 1)"
+    assert py2c.parse(["(", 1, "+", 2, ")", "*", "(", 2, "-", 1, ")"]).evaluate() == "(1 + 2) * (2 - 1)"
     
