@@ -1,5 +1,6 @@
 from py2c import __version__
 from py2c import py2c
+import pytest
 
 
 def test_version():
@@ -34,6 +35,11 @@ def test_tokenize_division():
     assert py2c.tokenize("1 // 2") == [1, "/", 2]
 
 
+def test_tokenize_unknown_token():
+    with pytest.raises(Exception):
+        py2c.tokenize("1 ? 2")
+
+
 def test_parse_integer():
     assert py2c.parse([1]) == "1"
 
@@ -52,3 +58,8 @@ def test_parse_multiplication():
 
 def test_parse_division():
     assert py2c.parse([1, "/", 2]) == "1 / 2"
+
+
+def test_parse_unknown_token():
+    with pytest.raises(Exception):
+        py2c.parse([1, "?", 2])

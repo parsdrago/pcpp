@@ -36,6 +36,10 @@ def tokenize(code):
                 tokens.append("/")
             else:
                 i -= 1
+        elif c == " ":
+            pass
+        else:
+            raise Exception("Unknown token: " + c)
         i += 1
 
     return tokens
@@ -54,6 +58,8 @@ def parse(tokens):
             parsed += " * "
         elif token == "/":
             parsed += " / "
+        else:
+            raise Exception("Unknown token: " + str(token))
     return parsed
 
 
