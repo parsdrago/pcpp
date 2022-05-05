@@ -53,7 +53,7 @@ def tokenize(code):
             if code[i] == "/":
                 tokens.append("/")
             else:
-                i -= 1
+                raise Exception("Expected /")
         elif c == "(":
             tokens.append("(")
         elif c == ")":
