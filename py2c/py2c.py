@@ -7,6 +7,24 @@ int main(void) {
 }"""
 
 
+class Leaf:
+    def __init__(self, value):
+        self.value = value
+
+    def evaluate(self):
+        return str(self.value)
+
+
+class Node:
+    def __init__(self, operator, left, right):
+        self.operator = operator
+        self.left = left
+        self.right = right
+
+    def evaluate(self):
+        return f"{self.left.evaluate()} {self.operator} {self.right.evaluate()}"
+
+
 def tokenize(code):
     tokens = []
     i = 0
@@ -46,22 +64,31 @@ def tokenize(code):
 
 
 def parse(tokens):
-    parsed = ""
-    for token in tokens:
-        if isinstance(token, int):
-            parsed += str(token)
-        elif token == "+":
-            parsed += " + "
-        elif token == "-":
-            parsed += " - "
-        elif token == "*":
-            parsed += " * "
-        elif token == "/":
-            parsed += " / "
-        else:
-            raise Exception("Unknown token: " + str(token))
-    return parsed
+    def atom(tokens):
+        token = tokens.pop(0)
+        if not isinstance(token, int):
+            raise Exception("Expected integer, got: " + str(token))
+        return Leaf(token)
 
+    def mul(tokens):
+        node = atom(tokens)
+        while len(tokens) > 0 and (tokens[0] == "*" or tokens[0] == "/"):
+            token = tokens.pop(0)
+            node = Node(token, node, atom(tokens))
+        return node
+
+    def expr(tokens):
+        node = mul(tokens)
+        while len(tokens) > 0:
+            if tokens[0] == "+" or tokens[0] == "-":
+                token = tokens.pop(0)
+                node = Node(token, node, mul(tokens))
+            else:
+                raise Exception("Expected operator, got: " + str(tokens[0]))
+        return node
+
+    return expr(tokens).evaluate()
+    
 
 def output_integer(i):
     tokens = tokenize(i)
