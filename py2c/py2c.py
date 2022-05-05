@@ -3,7 +3,7 @@ import sys
 TEMPLATE = """#include <stdio.h>
 
 int main(void) {
-    return {{return value}};
+    {{STATEMENTS}}
 }"""
 
 
@@ -41,6 +41,25 @@ class IfNode:
 
     def evaluate(self):
         return f"{self.condition.evaluate()} ? {self.true_branch.evaluate()} : {self.false_branch.evaluate()}"
+
+
+class ReturnNode:
+    def __init__(self, value):
+        self.value = value
+
+    def evaluate(self):
+        return f"return {self.value.evaluate()}"
+
+
+class StatementList:
+    def __init__(self):
+        self.expressions = []
+
+    def add(self, expr):
+        self.expressions.append(expr)
+
+    def evaluate(self):
+        return "; ".join(expr.evaluate() for expr in self.expressions) + ";"
 
 
 def tokenize(code):
@@ -124,6 +143,30 @@ def tokenize(code):
                 raise Exception("Expected else")
         elif c == " ":
             pass
+        elif c == ";":
+            tokens.append(";")
+        elif c == "r":
+            i += 1
+            if code[i] == "e":
+                i += 1
+                if code[i] == "t":
+                    i += 1
+                    if code[i] == "u":
+                        i += 1
+                        if code[i] == "r":
+                            i += 1
+                            if code[i] == "n":
+                                tokens.append("return")
+                            else:
+                                raise Exception("Expected return")
+                        else:
+                            raise Exception("Expected return")
+                    else:
+                        raise Exception("Expected return")
+                else:
+                    raise Exception("Expected return")
+            else:
+                raise Exception("Expected return")
         else:
             raise Exception("Unknown token: " + c)
         i += 1
@@ -175,14 +218,30 @@ def parse(tokens):
             node = IfNode(condition, node, false_branch)
         return node
 
-    return expr(tokens)
+    def statement(tokens):
+        if tokens[0] == "return":
+            tokens.pop(0)
+            return ReturnNode(expr(tokens))
+        return expr(tokens)
+
+    def statements(tokens):
+        expr_list = StatementList()
+        node = statement(tokens)
+        expr_list.add(node)
+        while len(tokens) > 0 and tokens[0] == ";":
+            tokens.pop(0)
+            node = statement(tokens)
+            expr_list.add(node)
+        return expr_list
+
+    return statements(tokens)
 
 
 def output_integer(i):
     tokens = tokenize(i)
     parsed = parse(tokens)
     value = parsed.evaluate()
-    print(TEMPLATE.replace("{{return value}}", value))
+    print(TEMPLATE.replace("{{STATEMENTS}}", value))
 
 
 if __name__ == "__main__":

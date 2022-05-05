@@ -76,69 +76,85 @@ def test_tokenize_if_complicated():
     assert py2c.tokenize("4 if(1==2)else 1") == [4, "if", "(", 1, "==", 2, ")", "else", 1]
 
 
+def test_tokenize_multiple_expressions():
+    assert py2c.tokenize("1 + 2 * 3; 1 + 3") == [1, "+", 2, "*", 3, ";", 1, "+", 3]
+
+
+def test_tokenize_return():
+    assert py2c.tokenize("return 1") == ["return", 1]
+
+
 def test_parse_integer():
-    assert py2c.parse([1]).evaluate() == "1"
+    assert py2c.parse([1]).evaluate() == "1;"
 
 
 def test_parse_addition():
-    assert py2c.parse([1, "+", 2]).evaluate() == "1 + 2"
+    assert py2c.parse([1, "+", 2]).evaluate() == "1 + 2;"
 
 
 def test_parse_subtraction():
-    assert py2c.parse([1, "-", 2]).evaluate() == "1 - 2"
+    assert py2c.parse([1, "-", 2]).evaluate() == "1 - 2;"
 
 
 def test_parse_multiplication():
-    assert py2c.parse([1, "*", 2]).evaluate() == "1 * 2"
+    assert py2c.parse([1, "*", 2]).evaluate() == "1 * 2;"
 
 
 def test_parse_division():
-    assert py2c.parse([1, "/", 2]).evaluate() == "1 / 2"
+    assert py2c.parse([1, "/", 2]).evaluate() == "1 / 2;"
 
 
 def test_parse_parenthes():
-    assert py2c.parse(["(", 1, "+", 2, ")"]).evaluate() == "(1 + 2)"
+    assert py2c.parse(["(", 1, "+", 2, ")"]).evaluate() == "(1 + 2);"
 
 
 def test_parse_parenthes_complicated():
-    assert py2c.parse(["(", 1, "+", 2, ")", "*", 3]).evaluate() == "(1 + 2) * 3"
+    assert py2c.parse(["(", 1, "+", 2, ")", "*", 3]).evaluate() == "(1 + 2) * 3;"
 
     
 def test_parse_parenthes_complicated2():
-    assert py2c.parse(["(", 1, "+", 2, ")", "*", "(", 2, "-", 1, ")"]).evaluate() == "(1 + 2) * (2 - 1)"
+    assert py2c.parse(["(", 1, "+", 2, ")", "*", "(", 2, "-", 1, ")"]).evaluate() == "(1 + 2) * (2 - 1);"
     
 
 def test_parse_equality():
-    assert py2c.parse([1, "==", 2]).evaluate() == "1 == 2"
+    assert py2c.parse([1, "==", 2]).evaluate() == "1 == 2;"
 
 
 def test_parse_equality_complicated():
-    assert py2c.parse(["(", 1, "+", 2, ")", "==", 3]).evaluate() == "(1 + 2) == 3"
+    assert py2c.parse(["(", 1, "+", 2, ")", "==", 3]).evaluate() == "(1 + 2) == 3;"
 
 
 def test_parse_inequality():
-    assert py2c.parse([1, "!=", 2]).evaluate() == "1 != 2"
+    assert py2c.parse([1, "!=", 2]).evaluate() == "1 != 2;"
 
 
 def test_parse_greaterthan():
-    assert py2c.parse([1, ">", 2]).evaluate() == "1 > 2"
+    assert py2c.parse([1, ">", 2]).evaluate() == "1 > 2;"
 
 
 def test_parse_lessthan():
-    assert py2c.parse([1, "<", 2]).evaluate() == "1 < 2"
+    assert py2c.parse([1, "<", 2]).evaluate() == "1 < 2;"
 
 
 def test_parse_greaterthan_equal():
-    assert py2c.parse([1, ">=", 2]).evaluate() == "1 >= 2"
+    assert py2c.parse([1, ">=", 2]).evaluate() == "1 >= 2;"
 
 
 def test_parse_lessthan_equal():
-    assert py2c.parse([1, "<=", 2]).evaluate() == "1 <= 2"
+    assert py2c.parse([1, "<=", 2]).evaluate() == "1 <= 2;"
 
 
 def test_parse_if():
-    assert py2c.parse([3, "if", 1, "==", 1, "else", 5]).evaluate() == "1 == 1 ? 3 : 5"
+    assert py2c.parse([3, "if", 1, "==", 1, "else", 5]).evaluate() == "1 == 1 ? 3 : 5;"
 
 
 def test_parse_if_complicated():
-    assert py2c.parse(["(", 1, "+", 2, ")", "if", "(", 1, "==", 2, ")", "else", 1]).evaluate() == "(1 == 2) ? (1 + 2) : 1"
+    assert py2c.parse(["(", 1, "+", 2, ")", "if", "(", 1, "==", 2, ")", "else", 1]).evaluate() == "(1 == 2) ? (1 + 2) : 1;"
+
+
+def test_parse_multiple_expressions():
+    assert py2c.parse(["(", 1, "+", 2, ")", "*", 3, ";", "(", 1, "+", 3, ")"]).evaluate() == "(1 + 2) * 3; (1 + 3);"
+
+
+def test_parse_return():
+    assert py2c.parse(["return", 1]).evaluate() == "return 1;"
