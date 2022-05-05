@@ -182,3 +182,7 @@ def test_parse_assign():
 
 def test_parse_assign_and_return():
     assert py2c.parse(["a", "=", 1, ";", "return", "a"]).evaluate() == "int a = 1; return a;"
+
+
+def test_parse_declare_and_assing():
+    assert py2c.parse(["a", "=", 1, ";", "a", "=", 2]).evaluate() == "int a = 1; a = 2;"

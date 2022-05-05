@@ -47,6 +47,15 @@ class AssignmentNode:
         self.value = value
 
     def evaluate(self):
+        return f"{self.name.evaluate()} = {self.value.evaluate()}"
+
+
+class DeclarationNode:
+    def __init__(self, name, value):
+        self.name = name
+        self.value = value
+
+    def evaluate(self):
         return f"int {self.name.evaluate()} = {self.value.evaluate()}"
 
 
@@ -162,6 +171,8 @@ def parse(tokens):
             node = BinaryOperatorNode(token, node, addi(tokens))
         return node
 
+    defined_variables = []
+
     def expr(tokens):
         node = comp(tokens)
         if len(tokens) > 0 and tokens[0] == "if":
@@ -174,7 +185,12 @@ def parse(tokens):
         elif len(tokens) > 0 and tokens[0] == "=":
             _ = tokens.pop(0)
             value = comp(tokens)
-            node = AssignmentNode(node, value)
+            print(defined_variables)
+            if node.evaluate() in defined_variables:
+                node = AssignmentNode(node, value)
+            else:
+                defined_variables.append(node.evaluate())
+                node = DeclarationNode(node, value)
         return node
 
     def statement(tokens):

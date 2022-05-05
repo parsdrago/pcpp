@@ -17,6 +17,8 @@ call:testcase "return 4 if(1==2)else 1" 1
 call:testcase "3+2;return 1" 1
 call:testcase "a=4;return a" 4
 call:testcase "hoge=4;return hoge" 4
+call:testcase "hoge=4;hoge=hoge+1;return hoge" 5
+call:testcase "hoge=4;fuga=hoge+1;return fuga" 5
 exit /b 0
 
 :testcase
