@@ -24,15 +24,27 @@ def tokenize(code):
                 i += 1
             i -= 1
             tokens.append(current)
+        elif c == "+":
+            tokens.append("+")
         i += 1
 
     return tokens
 
 
+def parse(tokens):
+    parsed = ""
+    for token in tokens:
+        if isinstance(token, int):
+            parsed += str(token)
+        elif token == "+":
+            parsed += " + "
+    return parsed
+
+
 def output_integer(i):
     tokens = tokenize(i)
-    if len(tokens) > 0:
-        print(TEMPLATE.replace("{{return value}}", str(tokens[-1])))
+    parsed = parse(tokens)
+    print(TEMPLATE.replace("{{return value}}", parsed))
 
 
 if __name__ == "__main__":
