@@ -40,6 +40,10 @@ def test_tokenize_unknown_token():
         py2c.tokenize("1 ? 2")
 
 
+def test_tokenize_parenthes():
+    assert py2c.tokenize("(1 + 2)") == ["(", 1, "+", 2, ")"]
+
+
 def test_parse_integer():
     assert py2c.parse([1]) == "1"
 
@@ -60,6 +64,14 @@ def test_parse_division():
     assert py2c.parse([1, "/", 2]) == "1 / 2"
 
 
-def test_parse_unknown_token():
-    with pytest.raises(Exception):
-        py2c.parse([1, "?", 2])
+def test_parse_parenthes():
+    assert py2c.parse(["(", 1, "+", 2, ")"]) == "(1 + 2)"
+
+
+def test_parse_parenthes_complicated():
+    assert py2c.parse(["(", 1, "+", 2, ")", "*", 3]) == "(1 + 2) * 3"
+
+    
+def test_parse_parenthes_complicated2():
+    assert py2c.parse(["(", 1, "+", 2, ")", "*", "(", 2, "-", 1, ")"]) == "(1 + 2) * (2 - 1)"
+    

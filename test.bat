@@ -11,6 +11,7 @@ call:testcase "3*2" 6
 call:testcase "3//2" 1
 call:testcase "5-2*2" 1
 call:testcase "3+4//2" 5
+call:testcase "(5-2)*2" 6
 exit /b 0
 
 :testcase

@@ -54,6 +54,10 @@ def tokenize(code):
                 tokens.append("/")
             else:
                 i -= 1
+        elif c == "(":
+            tokens.append("(")
+        elif c == ")":
+            tokens.append(")")
         elif c == " ":
             pass
         else:
@@ -66,6 +70,11 @@ def tokenize(code):
 def parse(tokens):
     def atom(tokens):
         token = tokens.pop(0)
+        if token == "(":
+            result = expr(tokens)
+            if tokens.pop(0) != ")":
+                raise Exception("Missing )")
+            return Leaf(f"({result.evaluate()})")
         if not isinstance(token, int):
             raise Exception("Expected integer, got: " + str(token))
         return Leaf(token)
@@ -79,12 +88,9 @@ def parse(tokens):
 
     def expr(tokens):
         node = mul(tokens)
-        while len(tokens) > 0:
-            if tokens[0] == "+" or tokens[0] == "-":
-                token = tokens.pop(0)
-                node = Node(token, node, mul(tokens))
-            else:
-                raise Exception("Expected operator, got: " + str(tokens[0]))
+        while len(tokens) > 0 and (tokens[0] == "+" or tokens[0] == "-"):
+            token = tokens.pop(0)
+            node = Node(token, node, mul(tokens))
         return node
 
     return expr(tokens).evaluate()
