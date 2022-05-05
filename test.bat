@@ -15,6 +15,8 @@ call:testcase "return (5-2)*2" 6
 call:testcase "return 3 if 1 == 1 else 5" 3
 call:testcase "return 4 if(1==2)else 1" 1
 call:testcase "3+2;return 1" 1
+call:testcase "a=4;return a" 4
+call:testcase "hoge=4;return hoge" 4
 exit /b 0
 
 :testcase

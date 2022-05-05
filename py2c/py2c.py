@@ -15,6 +15,14 @@ class AtomicNode:
         return str(self.value)
 
 
+class VariableNode:
+    def __init__(self, name):
+        self.name = name
+
+    def evaluate(self):
+        return self.name
+
+
 class ParenthesisNode:
     def __init__(self, inner):
         self.inner = inner
@@ -31,6 +39,15 @@ class BinaryOperatorNode:
 
     def evaluate(self):
         return f"{self.left.evaluate()} {self.operator} {self.right.evaluate()}"
+
+
+class AssignmentNode:
+    def __init__(self, name, value):
+        self.name = name
+        self.value = value
+
+    def evaluate(self):
+        return f"int {self.name.evaluate()} = {self.value.evaluate()}"
 
 
 class IfNode:
@@ -74,6 +91,7 @@ def tokenize(code):
         (">=", ">="),
         ("<", "<"),
         ("<=", "<="),
+        ("=", "="),
         ("if", "if"),
         ("else", "else"),
         ("return", "return"),
@@ -96,6 +114,11 @@ def tokenize(code):
                 while i < len(code) and code[i] in ["0", "1", "2", "3", "4", "5", "6", "7", "8", "9"]:
                     i += 1
                 tokens.append(int(code[start:i]))
+            elif code[i].isalpha() or code[i] == "_":
+                start = i
+                while i < len(code) and (code[i].isalnum() or code[i] == "_"):
+                    i += 1
+                tokens.append(code[start:i])
             elif code[i] == " ":
                 i += 1
             else:
@@ -112,9 +135,11 @@ def parse(tokens):
             if tokens.pop(0) != ")":
                 raise Exception("Missing )")
             return ParenthesisNode(result)
-        if not isinstance(token, int):
-            raise Exception("Expected integer, got: " + str(token))
-        return AtomicNode(token)
+        if isinstance(token, int):
+            return AtomicNode(token)
+        if isinstance(token, str):
+            return VariableNode(token)
+        raise Exception("Unexpected token: " + token)
 
     def mul(tokens):
         node = atom(tokens)
@@ -146,6 +171,10 @@ def parse(tokens):
                 raise Exception("Expected else")
             false_branch = comp(tokens)
             node = IfNode(condition, node, false_branch)
+        elif len(tokens) > 0 and tokens[0] == "=":
+            _ = tokens.pop(0)
+            value = comp(tokens)
+            node = AssignmentNode(node, value)
         return node
 
     def statement(tokens):
