@@ -66,6 +66,32 @@ def tokenize(code):
             tokens.append("(")
         elif c == ")":
             tokens.append(")")
+        elif c == "=":
+            i += 1
+            if code[i] == "=":
+                tokens.append("==")
+            else:
+                raise Exception("Expected ==")
+        elif c == "!":
+            i += 1
+            if code[i] == "=":
+                tokens.append("!=")
+            else:
+                raise Exception("Expected !=")
+        elif c == ">":
+            i += 1
+            if code[i] == "=":
+                tokens.append(">=")
+            else:
+                tokens.append(">")
+                i -= 1
+        elif c == "<":
+            i += 1
+            if code[i] == "=":
+                tokens.append("<=")
+            else:
+                tokens.append("<")
+                i -= 1
         elif c == " ":
             pass
         else:
@@ -79,7 +105,7 @@ def parse(tokens):
     def atom(tokens):
         token = tokens.pop(0)
         if token == "(":
-            result = expr(tokens)
+            result = addi(tokens)
             if tokens.pop(0) != ")":
                 raise Exception("Missing )")
             return Parenthesis(result)
@@ -94,11 +120,18 @@ def parse(tokens):
             node = Node(token, node, atom(tokens))
         return node
 
-    def expr(tokens):
+    def addi(tokens):
         node = mul(tokens)
         while len(tokens) > 0 and (tokens[0] == "+" or tokens[0] == "-"):
             token = tokens.pop(0)
             node = Node(token, node, mul(tokens))
+        return node
+
+    def expr(tokens):
+        node = addi(tokens)
+        while len(tokens) > 0 and (tokens[0] in ["==", "!=", ">", ">=", "<", "<="]):
+            token = tokens.pop(0)
+            node = Node(token, node, addi(tokens))
         return node
 
     return expr(tokens)

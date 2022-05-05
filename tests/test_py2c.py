@@ -44,6 +44,30 @@ def test_tokenize_parenthes():
     assert py2c.tokenize("(1 + 2)") == ["(", 1, "+", 2, ")"]
 
 
+def test_tokenize_equality():
+    assert py2c.tokenize("1 == 2") == [1, "==", 2]
+
+
+def test_tokenize_inequality():
+    assert py2c.tokenize("1 != 2") == [1, "!=", 2]
+
+
+def test_tokenize_greaterthan():
+    assert py2c.tokenize("1 > 2") == [1, ">", 2]
+
+
+def test_tokenize_lessthan():
+    assert py2c.tokenize("1 < 2") == [1, "<", 2]
+
+
+def test_tokenize_greaterthan_equal():
+    assert py2c.tokenize("1 >= 2") == [1, ">=", 2]
+
+
+def test_tokenize_lessthan_equal():
+    assert py2c.tokenize("1 <= 2") == [1, "<=", 2]
+
+
 def test_parse_integer():
     assert py2c.parse([1]).evaluate() == "1"
 
@@ -75,3 +99,30 @@ def test_parse_parenthes_complicated():
 def test_parse_parenthes_complicated2():
     assert py2c.parse(["(", 1, "+", 2, ")", "*", "(", 2, "-", 1, ")"]).evaluate() == "(1 + 2) * (2 - 1)"
     
+
+def test_parse_equality():
+    assert py2c.parse([1, "==", 2]).evaluate() == "1 == 2"
+
+
+def test_parse_equality_complicated():
+    assert py2c.parse(["(", 1, "+", 2, ")", "==", 3]).evaluate() == "(1 + 2) == 3"
+
+
+def test_parse_inequality():
+    assert py2c.parse([1, "!=", 2]).evaluate() == "1 != 2"
+
+
+def test_parse_greaterthan():
+    assert py2c.parse([1, ">", 2]).evaluate() == "1 > 2"
+
+
+def test_parse_lessthan():
+    assert py2c.parse([1, "<", 2]).evaluate() == "1 < 2"
+
+
+def test_parse_greaterthan_equal():
+    assert py2c.parse([1, ">=", 2]).evaluate() == "1 >= 2"
+
+
+def test_parse_lessthan_equal():
+    assert py2c.parse([1, "<=", 2]).evaluate() == "1 <= 2"
