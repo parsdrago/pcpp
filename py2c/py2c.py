@@ -26,6 +26,8 @@ def tokenize(code):
             tokens.append(current)
         elif c == "+":
             tokens.append("+")
+        elif c == "-":
+            tokens.append("-")
         i += 1
 
     return tokens
@@ -38,6 +40,8 @@ def parse(tokens):
             parsed += str(token)
         elif token == "+":
             parsed += " + "
+        elif token == "-":
+            parsed += " - "
     return parsed
 
 

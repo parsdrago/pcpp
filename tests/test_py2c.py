@@ -22,9 +22,17 @@ def test_tokenize_addition():
     assert py2c.tokenize("1 + 2") == [1, "+", 2]
 
 
+def test_tokenize_subtraction():
+    assert py2c.tokenize("1 - 2") == [1, "-", 2]
+
+
 def test_parse_integer():
     assert py2c.parse([1]) == "1"
 
 
 def test_parse_addition():
     assert py2c.parse([1, "+", 2]) == "1 + 2"
+
+
+def test_parse_subtraction():
+    assert py2c.parse([1, "-", 2]) == "1 - 2"
