@@ -88,7 +88,7 @@ def parse(tokens):
         return node
 
     return expr(tokens).evaluate()
-    
+
 
 def output_integer(i):
     tokens = tokenize(i)

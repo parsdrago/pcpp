@@ -1,6 +1,6 @@
-from py2c import __version__
-from py2c import py2c
 import pytest
+
+from py2c import __version__, py2c
 
 
 def test_version():
