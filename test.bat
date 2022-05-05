@@ -1,0 +1,23 @@
+@echo off
+
+set TESTDIR=.test
+
+call:testcase 12 12
+call:testcase 42 42
+exit /b 0
+
+:testcase
+mkdir %TESTDIR%
+
+python py2c/py2c.py %1 > %TESTDIR%\test.c
+clang %TESTDIR%\test.c -o %TESTDIR%\test.exe
+%TESTDIR%\test.exe
+set ret=%errorlevel%
+if %ret% == %2 (
+    echo [ PASS ] input %1, expected %2, get %ret%
+) else (
+    echo [FAILED] input %1, expected %2, get %ret%
+)
+
+rm -rf %TESTDIR%
+exit /b
