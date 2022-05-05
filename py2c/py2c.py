@@ -28,6 +28,14 @@ def tokenize(code):
             tokens.append("+")
         elif c == "-":
             tokens.append("-")
+        elif c == "*":
+            tokens.append("*")
+        elif c == "/":
+            i += 1
+            if code[i] == "/":
+                tokens.append("/")
+            else:
+                i -= 1
         i += 1
 
     return tokens
@@ -42,6 +50,10 @@ def parse(tokens):
             parsed += " + "
         elif token == "-":
             parsed += " - "
+        elif token == "*":
+            parsed += " * "
+        elif token == "/":
+            parsed += " / "
     return parsed
 
 

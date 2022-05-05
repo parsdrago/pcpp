@@ -26,6 +26,14 @@ def test_tokenize_subtraction():
     assert py2c.tokenize("1 - 2") == [1, "-", 2]
 
 
+def test_tokenize_multiplication():
+    assert py2c.tokenize("1 * 2") == [1, "*", 2]
+
+
+def test_tokenize_division():
+    assert py2c.tokenize("1 // 2") == [1, "/", 2]
+
+
 def test_parse_integer():
     assert py2c.parse([1]) == "1"
 
@@ -36,3 +44,11 @@ def test_parse_addition():
 
 def test_parse_subtraction():
     assert py2c.parse([1, "-", 2]) == "1 - 2"
+
+
+def test_parse_multiplication():
+    assert py2c.parse([1, "*", 2]) == "1 * 2"
+
+
+def test_parse_division():
+    assert py2c.parse([1, "/", 2]) == "1 / 2"

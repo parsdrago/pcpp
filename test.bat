@@ -7,6 +7,8 @@ call:testcase 42 42
 call:testcase 1+2 3
 call:testcase "1 + 2" 3
 call:testcase "3-1" 2
+call:testcase "3*2" 6
+call:testcase "3//2" 1
 exit /b 0
 
 :testcase
