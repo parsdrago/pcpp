@@ -33,6 +33,16 @@ class Node:
         return f"{self.left.evaluate()} {self.operator} {self.right.evaluate()}"
 
 
+class IfNode:
+    def __init__(self, condition, true_branch, false_branch):
+        self.condition = condition
+        self.true_branch = true_branch
+        self.false_branch = false_branch
+
+    def evaluate(self):
+        return f"{self.condition.evaluate()} ? {self.true_branch.evaluate()} : {self.false_branch.evaluate()}"
+
+
 def tokenize(code):
     tokens = []
     i = 0
@@ -92,6 +102,26 @@ def tokenize(code):
             else:
                 tokens.append("<")
                 i -= 1
+        elif c == "i":
+            i += 1
+            if code[i] == "f":
+                tokens.append("if")
+            else:
+                raise Exception("Expected if")
+        elif c == "e":
+            i += 1
+            if code[i] == "l":
+                i += 1
+                if code[i] == "s":
+                    i += 1
+                    if code[i] == "e":
+                        tokens.append("else")
+                    else:
+                        raise Exception("Expected else")
+                else:
+                    raise Exception("Expected else")
+            else:
+                raise Exception("Expected else")
         elif c == " ":
             pass
         else:
@@ -105,7 +135,7 @@ def parse(tokens):
     def atom(tokens):
         token = tokens.pop(0)
         if token == "(":
-            result = addi(tokens)
+            result = expr(tokens)
             if tokens.pop(0) != ")":
                 raise Exception("Missing )")
             return Parenthesis(result)
@@ -127,11 +157,22 @@ def parse(tokens):
             node = Node(token, node, mul(tokens))
         return node
 
-    def expr(tokens):
+    def comp(tokens):
         node = addi(tokens)
         while len(tokens) > 0 and (tokens[0] in ["==", "!=", ">", ">=", "<", "<="]):
             token = tokens.pop(0)
             node = Node(token, node, addi(tokens))
+        return node
+
+    def expr(tokens):
+        node = comp(tokens)
+        if len(tokens) > 0 and tokens[0] == "if":
+            token = tokens.pop(0)
+            condition = comp(tokens)
+            if tokens.pop(0) != "else":
+                raise Exception("Expected else")
+            false_branch = comp(tokens)
+            node = IfNode(condition, node, false_branch)
         return node
 
     return expr(tokens)
