@@ -63,113 +63,43 @@ class StatementList:
 
 
 def tokenize(code):
+    symbols = [
+        ("+", "+"),
+        ("-", "-"),
+        ("*", "*"),
+        ("//", "/"),
+        ("==", "=="),
+        ("!=", "!="),
+        (">", ">"),
+        (">=", ">="),
+        ("<", "<"),
+        ("<=", "<="),
+        ("if", "if"),
+        ("else", "else"),
+        ("return", "return"),
+        (";", ";"),
+        ("(", "("),
+        (")", ")"),
+    ]
+    symbols.sort(key=lambda s: len(s[0]), reverse=True)
     tokens = []
     i = 0
     while i < len(code):
-        c = code[i]
-        if c.isdigit():
-            current = int(c)
-            i += 1
-            while i < len(code) and code[i].isdigit():
-                c = code[i]
-                if c.isdigit():
-                    current = current * 10 + int(c)
-                else:
-                    break
-                i += 1
-            i -= 1
-            tokens.append(current)
-        elif c == "+":
-            tokens.append("+")
-        elif c == "-":
-            tokens.append("-")
-        elif c == "*":
-            tokens.append("*")
-        elif c == "/":
-            i += 1
-            if code[i] == "/":
-                tokens.append("/")
-            else:
-                raise Exception("Expected /")
-        elif c == "(":
-            tokens.append("(")
-        elif c == ")":
-            tokens.append(")")
-        elif c == "=":
-            i += 1
-            if code[i] == "=":
-                tokens.append("==")
-            else:
-                raise Exception("Expected ==")
-        elif c == "!":
-            i += 1
-            if code[i] == "=":
-                tokens.append("!=")
-            else:
-                raise Exception("Expected !=")
-        elif c == ">":
-            i += 1
-            if code[i] == "=":
-                tokens.append(">=")
-            else:
-                tokens.append(">")
-                i -= 1
-        elif c == "<":
-            i += 1
-            if code[i] == "=":
-                tokens.append("<=")
-            else:
-                tokens.append("<")
-                i -= 1
-        elif c == "i":
-            i += 1
-            if code[i] == "f":
-                tokens.append("if")
-            else:
-                raise Exception("Expected if")
-        elif c == "e":
-            i += 1
-            if code[i] == "l":
-                i += 1
-                if code[i] == "s":
-                    i += 1
-                    if code[i] == "e":
-                        tokens.append("else")
-                    else:
-                        raise Exception("Expected else")
-                else:
-                    raise Exception("Expected else")
-            else:
-                raise Exception("Expected else")
-        elif c == " ":
-            pass
-        elif c == ";":
-            tokens.append(";")
-        elif c == "r":
-            i += 1
-            if code[i] == "e":
-                i += 1
-                if code[i] == "t":
-                    i += 1
-                    if code[i] == "u":
-                        i += 1
-                        if code[i] == "r":
-                            i += 1
-                            if code[i] == "n":
-                                tokens.append("return")
-                            else:
-                                raise Exception("Expected return")
-                        else:
-                            raise Exception("Expected return")
-                    else:
-                        raise Exception("Expected return")
-                else:
-                    raise Exception("Expected return")
-            else:
-                raise Exception("Expected return")
+        for symbol, tokenized in symbols:
+            if code[i:i+len(symbol)] == symbol:
+                tokens.append(tokenized)
+                i += len(symbol)
+                break
         else:
-            raise Exception("Unknown token: " + c)
-        i += 1
+            if code[i] in ["0", "1", "2", "3", "4", "5", "6", "7", "8", "9"]:
+                start = i
+                while i < len(code) and code[i] in ["0", "1", "2", "3", "4", "5", "6", "7", "8", "9"]:
+                    i += 1
+                tokens.append(int(code[start:i]))
+            elif code[i] == " ":
+                i += 1
+            else:
+                raise Exception("Unexpected token: " + code[i])
 
     return tokens
 
