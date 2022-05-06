@@ -98,28 +98,40 @@ class StatementList:
         return ";\n".join(expr.evaluate() for expr in self.expressions) + ";"
 
 
+class Token:
+    def __init__(self, kind, value):
+        self.kind = kind
+        self.value = value
+
+    def __eq__(self, __o: object) -> bool:
+        if not isinstance(__o, Token):
+            return False
+        return self.kind == __o.kind and self.value == __o.value
+
+
 def tokenize(code):
     symbols = [
-        ("+", "+"),
-        ("-", "-"),
-        ("*", "*"),
-        ("//", "/"),
-        ("==", "=="),
-        ("!=", "!="),
-        (">", ">"),
-        (">=", ">="),
-        ("<", "<"),
-        ("<=", "<="),
-        ("=", "="),
-        ("if", "if"),
-        ("else", "else"),
-        ("return", "return"),
-        ("def", "def"),
-        (";", ";"),
-        (":", ":"),
-        (",", ","),
-        ("(", "("),
-        (")", ")"),
+        ("+", Token("+", "+")),
+        ("-", Token("-", "-")),
+        ("*", Token("*", "*")),
+        ("//", Token("/", "/")),
+        ("%", Token("%", "%")),
+        ("(", Token("(", "(")),
+        (")", Token(")", ")")),
+        ("=", Token("=", "=")),
+        (";", Token(";", ";")),
+        ("<", Token("<", "<")),
+        (">", Token(">", ">")),
+        ("<=", Token("<=", "<=")),
+        (">=", Token(">=", ">=")),
+        ("!=", Token("!=", "!=")),
+        ("==", Token("==", "==")),
+        ("if", Token("if", "if")),
+        ("else", Token("else", "else")),
+        ("return", Token("return", "return")),
+        ("def", Token("def", "def")),
+        (":", Token(":", ":")),
+        (",", Token(",", ",")),
     ]
     symbols.sort(key=lambda s: len(s[0]), reverse=True)
     tokens = []
@@ -135,14 +147,18 @@ def tokenize(code):
                 start = i
                 while i < len(code) and code[i] in ["0", "1", "2", "3", "4", "5", "6", "7", "8", "9"]:
                     i += 1
-                tokens.append(int(code[start:i]))
+                tokens.append(Token("int", int(code[start:i])))
             elif code[i].isalpha() or code[i] == "_":
                 start = i
                 while i < len(code) and (code[i].isalnum() or code[i] == "_"):
                     i += 1
-                tokens.append(code[start:i])
+                tokens.append(Token("name", code[start:i]))
             elif code[i] == "\n":
-                tokens.append("\n")
+                indent_level = 0
+                while i+1 < len(code) and code[i+1] in [" ", "\t"]:
+                    i += 1
+                    indent_level += 1
+                tokens.append(Token("\n",indent_level))
                 i += 1
             elif code[i] == " ":
                 i += 1
@@ -155,53 +171,54 @@ def tokenize(code):
 def parse(tokens):
     def atom(tokens):
         token = tokens.pop(0)
-        if token == "(":
+        if token.kind == "(":
             result = expr(tokens)
-            if tokens.pop(0) != ")":
+            if tokens.pop(0).kind != ")":
                 raise Exception("Missing )")
             return ParenthesisNode(result)
-        if isinstance(token, int):
-            return AtomicNode(token)
-        if isinstance(token, str):
-            return VariableNode(token)
+        if token.kind == "int":
+            return AtomicNode(token.value)
+        if token.kind == "name":
+            return VariableNode(token.value)
         raise Exception("Unexpected token: " + token)
 
     def mul(tokens):
         node = atom(tokens)
-        while len(tokens) > 0 and (tokens[0] == "*" or tokens[0] == "/"):
+        while len(tokens) > 0 and (tokens[0].kind in ["*", "/", "%"]):
             token = tokens.pop(0)
-            node = BinaryOperatorNode(token, node, atom(tokens))
+            node = BinaryOperatorNode(token.value, node, atom(tokens))
         return node
 
     def addi(tokens):
         node = mul(tokens)
-        while len(tokens) > 0 and (tokens[0] == "+" or tokens[0] == "-"):
+        while len(tokens) > 0 and (tokens[0].kind in ["+", "-"]):
             token = tokens.pop(0)
-            node = BinaryOperatorNode(token, node, mul(tokens))
+            node = BinaryOperatorNode(token.value, node, mul(tokens))
         return node
 
     def comp(tokens):
         node = addi(tokens)
-        while len(tokens) > 0 and (tokens[0] in ["==", "!=", ">", ">=", "<", "<="]):
+        while len(tokens) > 0 and (tokens[0].kind in ["==", "!=", ">", ">=", "<", "<="]):
             token = tokens.pop(0)
-            node = BinaryOperatorNode(token, node, addi(tokens))
+            node = BinaryOperatorNode(token.value, node, addi(tokens))
         return node
 
     defined_variables = []
 
     def expr(tokens):
         node = comp(tokens)
-        if len(tokens) > 0 and tokens[0] == "if":
-            token = tokens.pop(0)
+        if len(tokens) > 0 and tokens[0].kind == "if":
+            tokens.pop(0)
             condition = comp(tokens)
-            if tokens.pop(0) != "else":
+            if tokens.pop(0).kind != "else":
                 raise Exception("Expected else")
             false_branch = comp(tokens)
             node = IfNode(condition, node, false_branch)
-        elif len(tokens) > 0 and tokens[0] == "=":
-            _ = tokens.pop(0)
+        elif len(tokens) > 0 and tokens[0].kind == "=":
+            tokens.pop(0)
             value = comp(tokens)
-            print(defined_variables)
+            if not isinstance(node, VariableNode):
+                raise Exception("Expected variable")
             if node.evaluate() in defined_variables:
                 node = AssignmentNode(node, value)
             else:
@@ -210,25 +227,25 @@ def parse(tokens):
         return node
 
     def statement(tokens):
-        if tokens[0] == "return":
+        if tokens[0].kind == "return":
             tokens.pop(0)
             return ReturnNode(expr(tokens))
-        elif tokens[0] == "def":
+        elif tokens[0].kind == "def":
             tokens.pop(0)
-            name = tokens.pop(0)
+            name = tokens.pop(0).value
             if name in defined_variables:
                 raise Exception("Variable already defined")
-            if tokens.pop(0) != "(":
+            if tokens.pop(0).kind != "(":
                 raise Exception("Expected (")
             args = []
-            while tokens[0] != ")":
-                if not isinstance(tokens[0], str):
+            while tokens[0].kind != ")":
+                if tokens[0].kind != "name":
                     raise Exception("Expected variable name")
-                if tokens[0] in args:
+                if tokens[0].value in args:
                     raise Exception("Duplicate argument")
-                args.append(tokens.pop(0))
+                args.append(tokens.pop(0).value)
             tokens.pop(0)
-            if tokens.pop(0) != ":":
+            if tokens.pop(0).kind != ":":
                 raise Exception("Expected :")
             body = statements(tokens)
             defined_variables.append(name)
@@ -239,11 +256,11 @@ def parse(tokens):
         expr_list = StatementList()
         node = statement(tokens)
         expr_list.add(node)
-        while len(tokens) > 0 and tokens[0] in [";", "\n"]:
+        while len(tokens) > 0 and tokens[0].kind in [";", "\n"]:
             tokens.pop(0)
             if len(tokens) == 0:
                 break
-            if tokens[0] in [";", "\n"]:
+            if tokens[0].kind in [";", "\n"]:
                 continue
             node = statement(tokens)
             expr_list.add(node)
