@@ -24,7 +24,10 @@ exit /b 0
 :testcase
 mkdir %TESTDIR%
 
-python py2c/py2c.py %1 > %TESTDIR%\test.c
+set TEMP_FILE=%TESTDIR%\test.py
+
+echo %~1 > %TEMP_FILE%
+python py2c/py2c.py %TEMP_FILE% > %TESTDIR%\test.c
 clang %TESTDIR%\test.c -o %TESTDIR%\test.exe
 %TESTDIR%\test.exe
 set ret=%errorlevel%

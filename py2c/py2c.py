@@ -261,4 +261,6 @@ def output_integer(i):
 
 
 if __name__ == "__main__":
-    output_integer(sys.argv[1])
+    with open(sys.argv[1], "r", encoding='utf-8') as f:
+        code = f.read()
+        output_integer(code)
