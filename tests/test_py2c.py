@@ -100,6 +100,10 @@ def test_tokenize_variablename_startswith_underbar():
     assert py2c.tokenize("_varname123 = 1") == ["_varname123", "=", 1]
 
 
+def test_tokenize_newline():
+    assert py2c.tokenize("1\n 2") == [1,"\n", 1, 2]
+
+
 def test_parse_integer():
     assert py2c.parse([1]).evaluate() == "1;"
 
@@ -186,3 +190,7 @@ def test_parse_assign_and_return():
 
 def test_parse_declare_and_assing():
     assert py2c.parse(["a", "=", 1, ";", "a", "=", 2]).evaluate() == "int a = 1; a = 2;"
+
+
+def test_parse_define_function():
+    assert py2c.parse(["def", "f", "(", "a", ")", ":", "return", "a"]).evaluate() == "int f(int a) { return a; };"

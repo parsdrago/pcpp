@@ -77,6 +77,16 @@ class ReturnNode:
         return f"return {self.value.evaluate()}"
 
 
+class FunctionNode:
+    def __init__(self, name, args, body):
+        self.name = name
+        self.args = args
+        self.body = body
+
+    def evaluate(self):
+        return f"int {self.name}({','.join('int ' + arg  for arg in self.args)}) {{ {self.body.evaluate()} }}"
+
+
 class StatementList:
     def __init__(self):
         self.expressions = []
@@ -104,7 +114,10 @@ def tokenize(code):
         ("if", "if"),
         ("else", "else"),
         ("return", "return"),
+        ("def", "def"),
         (";", ";"),
+        (":", ":"),
+        (",", ","),
         ("(", "("),
         (")", ")"),
     ]
@@ -128,6 +141,14 @@ def tokenize(code):
                 while i < len(code) and (code[i].isalnum() or code[i] == "_"):
                     i += 1
                 tokens.append(code[start:i])
+            elif code[i] == "\n":
+                tokens.append("\n")
+                indent_level = 0
+                i += 1
+                while i < len(code) and code[i] in [" ", "\t"]:
+                    i += 1
+                    indent_level += 1
+                tokens.append(indent_level)
             elif code[i] == " ":
                 i += 1
             else:
@@ -197,6 +218,26 @@ def parse(tokens):
         if tokens[0] == "return":
             tokens.pop(0)
             return ReturnNode(expr(tokens))
+        elif tokens[0] == "def":
+            tokens.pop(0)
+            name = tokens.pop(0)
+            if name in defined_variables:
+                raise Exception("Variable already defined")
+            if tokens.pop(0) != "(":
+                raise Exception("Expected (")
+            args = []
+            while tokens[0] != ")":
+                if not isinstance(tokens[0], str):
+                    raise Exception("Expected variable name")
+                if tokens[0] in args:
+                    raise Exception("Duplicate argument")
+                args.append(tokens.pop(0))
+            tokens.pop(0)
+            if tokens.pop(0) != ":":
+                raise Exception("Expected :")
+            body = statements(tokens)
+            defined_variables.append(name)
+            return FunctionNode(name, args, body)
         return expr(tokens)
 
     def statements(tokens):
