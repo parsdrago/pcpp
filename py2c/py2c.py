@@ -95,7 +95,7 @@ class StatementList:
         self.expressions.append(expr)
 
     def evaluate(self):
-        return "; ".join(expr.evaluate() for expr in self.expressions) + ";"
+        return ";\n".join(expr.evaluate() for expr in self.expressions) + ";"
 
 
 def tokenize(code):
@@ -143,12 +143,7 @@ def tokenize(code):
                 tokens.append(code[start:i])
             elif code[i] == "\n":
                 tokens.append("\n")
-                indent_level = 0
                 i += 1
-                while i < len(code) and code[i] in [" ", "\t"]:
-                    i += 1
-                    indent_level += 1
-                tokens.append(indent_level)
             elif code[i] == " ":
                 i += 1
             else:
@@ -244,8 +239,12 @@ def parse(tokens):
         expr_list = StatementList()
         node = statement(tokens)
         expr_list.add(node)
-        while len(tokens) > 0 and tokens[0] == ";":
+        while len(tokens) > 0 and tokens[0] in [";", "\n"]:
             tokens.pop(0)
+            if len(tokens) == 0:
+                break
+            if tokens[0] in [";", "\n"]:
+                continue
             node = statement(tokens)
             expr_list.add(node)
         return expr_list

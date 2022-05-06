@@ -1,7 +1,9 @@
 @echo off
 
 set TESTDIR=.test
+set TEST_SCRIPTS=test_scripts
 
+call:test_script test1.py 42
 call:testcase "return 12" 12
 call:testcase "return 42" 42
 call:testcase "return 1+2" 3
@@ -19,6 +21,8 @@ call:testcase "a=4;return a" 4
 call:testcase "hoge=4;return hoge" 4
 call:testcase "hoge=4;hoge=hoge+1;return hoge" 5
 call:testcase "hoge=4;fuga=hoge+1;return fuga" 5
+
+
 exit /b 0
 
 :testcase
@@ -27,7 +31,24 @@ mkdir %TESTDIR%
 set TEMP_FILE=%TESTDIR%\test.py
 
 echo %~1 > %TEMP_FILE%
+
 python py2c/py2c.py %TEMP_FILE% > %TESTDIR%\test.c
+clang %TESTDIR%\test.c -o %TESTDIR%\test.exe
+%TESTDIR%\test.exe
+set ret=%errorlevel%
+if %ret% == %2 (
+    echo [ PASS ] input %1, expected %2, get %ret%
+) else (
+    echo [FAILED] input %1, expected %2, get %ret%
+)
+
+rm -rf %TESTDIR%
+exit /b
+
+:test_script
+mkdir %TESTDIR%
+
+python py2c/py2c.py %TEST_SCRIPTS%\%1 > %TESTDIR%\test.c
 clang %TESTDIR%\test.c -o %TESTDIR%\test.exe
 %TESTDIR%\test.exe
 set ret=%errorlevel%
