@@ -87,6 +87,15 @@ class FunctionNode:
         return f"int {self.name}({','.join('int ' + arg  for arg in self.args)}) {{ {self.body.evaluate()} }}"
 
 
+class FunctionCallNode:
+    def __init__(self, name, args):
+        self.name = name
+        self.args = args
+
+    def evaluate(self):
+        return f"{self.name}({','.join(arg.evaluate() for arg in self.args)})"
+
+
 class BraceNode:
     def __init__(self, statements):
         self.statements = statements
@@ -140,7 +149,7 @@ def unoffside(code):
                 while len(indents) > 0 and not indent.startswith(indents[-1]):
                     indents.pop()
                     count += 1
-                new_lines.append("}" * count + line[i:])
+                new_lines.append("}\n" * count + line[i:])
         elif len(indents) == 0 and indent == "":
             new_lines.append(line)
         elif len(indents) == 0 and indent != "":
@@ -224,6 +233,18 @@ def parse(tokens):
         if token.kind == "int":
             return AtomicNode(token.value)
         if token.kind == "name":
+            if len(tokens) > 0 and tokens[0].kind == "(":
+                args = []
+                tokens.pop(0)
+                while len(tokens) > 0 and tokens[0].kind != ")":
+                    args.append(expr(tokens))
+                    if tokens[0].kind != ",":
+                        break
+                    tokens.pop(0)
+                if tokens[0].kind != ")":
+                    raise Exception("Missing )")
+                tokens.pop(0)
+                return FunctionCallNode(token.value, args)
             return VariableNode(token.value)
         raise Exception("Unexpected token: " + token.kind)
 
@@ -307,11 +328,10 @@ def parse(tokens):
         tokens.pop(0)
         while True:
             statements.add(statement(tokens))
+            if tokens[0].kind in [";", "\n"]:
+                tokens.pop(0)
             if tokens[0].kind == "}":
                 break
-            if tokens[0].kind not in [";", "\n"]:
-                raise Exception("Expected ; or \\n")
-            tokens.pop(0)
         tokens.pop(0)
         return BraceNode(statements)
 

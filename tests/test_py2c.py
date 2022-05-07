@@ -193,3 +193,7 @@ def test_parse_define_function2():
 
 def test_parse_brace_and_return():
     assert py2c.parse([Token("def", "def"), Token("name", "f"), Token("(", "("), Token(")", ")"), Token(":", ":"), Token("{", "{"), Token("return", "return"), Token("int", 1), Token("}", "}")]).evaluate() == "int f() { return 1; };"
+
+
+def test_parse_function_call():
+    assert py2c.parse([Token("name", "f"), Token("(", "("), Token("int", 1), Token(")", ")")]).evaluate() == "f(1);"
