@@ -32,7 +32,7 @@ set TEMP_FILE=%TESTDIR%\test.py
 
 echo %~1 > %TEMP_FILE%
 
-python py2c/py2c.py %TEMP_FILE% > %TESTDIR%\test.c
+python py2c/py2c.py %TEMP_FILE% --template > %TESTDIR%\test.c
 clang %TESTDIR%\test.c -o %TESTDIR%\test.exe
 %TESTDIR%\test.exe
 set ret=%errorlevel%

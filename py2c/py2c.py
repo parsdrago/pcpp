@@ -87,6 +87,13 @@ class FunctionNode:
         return f"int {self.name}({','.join('int ' + arg  for arg in self.args)}) {{ {self.body.evaluate()} }}"
 
 
+class BraceNode:
+    def __init__(self, statements):
+        self.statements = statements
+
+    def evaluate(self):
+        return self.statements.evaluate()
+
 class StatementList:
     def __init__(self):
         self.expressions = []
@@ -107,6 +114,42 @@ class Token:
         if not isinstance(__o, Token):
             return False
         return self.kind == __o.kind and self.value == __o.value
+
+
+def unoffside(code):
+    """
+    convert offside rule to {}-specified rule
+    """
+    lines = code.split("\n")
+    new_lines = []
+    indents = []
+    for line in lines:
+        i = 0
+        if len(line) > 0:
+            while line[i] == " ":
+                i += 1
+        indent = line[:i]
+        if i == len(line):
+            continue
+        if len(indents) > 0 and indents[-1] != indent:
+            if indent.startswith(indents[-1]):
+                new_lines.append("{" + line[i:])
+                indents.append(indent)
+            else:
+                count = 0
+                while len(indents) > 0 and not indent.startswith(indents[-1]):
+                    indents.pop()
+                    count += 1
+                new_lines.append("}" * count + line[i:])
+        elif len(indents) == 0 and indent == "":
+            new_lines.append(line)
+        elif len(indents) == 0 and indent != "":
+            new_lines.append("{" + line[i:])
+            indents.append(indent)
+        elif indents[-1] == indent:
+            new_lines.append(line[i:])
+
+    return "\n".join(new_lines) + "}" * len(indents)
 
 
 def tokenize(code):
@@ -132,6 +175,8 @@ def tokenize(code):
         ("def", Token("def", "def")),
         (":", Token(":", ":")),
         (",", Token(",", ",")),
+        ("{", Token("{", "{")),
+        ("}", Token("}", "}")),
     ]
     symbols.sort(key=lambda s: len(s[0]), reverse=True)
     tokens = []
@@ -180,7 +225,7 @@ def parse(tokens):
             return AtomicNode(token.value)
         if token.kind == "name":
             return VariableNode(token.value)
-        raise Exception("Unexpected token: " + token)
+        raise Exception("Unexpected token: " + token.kind)
 
     def mul(tokens):
         node = atom(tokens)
@@ -247,10 +292,28 @@ def parse(tokens):
             tokens.pop(0)
             if tokens.pop(0).kind != ":":
                 raise Exception("Expected :")
-            body = statements(tokens)
+            if tokens[0].kind == "\n":
+                tokens.pop(0)
+            body = brace(tokens)
             defined_variables.append(name)
             return FunctionNode(name, args, body)
         return expr(tokens)
+
+    def brace(tokens):
+        statements = StatementList()
+        if tokens[0].kind != "{":
+            statements.add(statement(tokens))
+            return BraceNode(statements)
+        tokens.pop(0)
+        while True:
+            statements.add(statement(tokens))
+            if tokens[0].kind == "}":
+                break
+            if tokens[0].kind not in [";", "\n"]:
+                raise Exception("Expected ; or \\n")
+            tokens.pop(0)
+        tokens.pop(0)
+        return BraceNode(statements)
 
     def statements(tokens):
         expr_list = StatementList()
@@ -269,14 +332,18 @@ def parse(tokens):
     return statements(tokens)
 
 
-def output_integer(i):
-    tokens = tokenize(i)
+def main(code, use_template):
+    unoffsided = unoffside(code)
+    tokens = tokenize(unoffsided)
     parsed = parse(tokens)
     value = parsed.evaluate()
-    print(TEMPLATE.replace("{{STATEMENTS}}", value))
-
+    if use_template:
+        print(TEMPLATE.replace("{{STATEMENTS}}", value))
+    else:
+        print(value)
 
 if __name__ == "__main__":
+    use_template = len(sys.argv) > 1 and "--template" in sys.argv
     with open(sys.argv[1], "r", encoding='utf-8') as f:
         code = f.read()
-        output_integer(code)
+        main(code, use_template)

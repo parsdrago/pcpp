@@ -1,2 +1,3 @@
-a = 42
-return a
+def main():
+    a = 42
+    return a

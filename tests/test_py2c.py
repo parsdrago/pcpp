@@ -8,6 +8,14 @@ def test_version():
     assert __version__ == "0.1.0"
 
 
+def test_unoffside_indent():
+    assert py2c.unoffside("a\n b") == "a\n{b}"
+
+    
+def test_unoffside_nested_indent():
+    assert py2c.unoffside("a\n b\n  c") == "a\n{b\n{c}}"
+
+
 def test_tokenize_1():
     assert py2c.tokenize("1") == [Token("int", 1)]
 
@@ -176,3 +184,12 @@ def test_parse_declare_and_assing():
 def test_parse_define_function():
     assert py2c.parse([Token("def", "def"), Token("name", "f"), Token("(", "("), Token("name", "a"), Token(")", ")"),
     Token(":", ":"), Token("return", "return"), Token("name", "a")]).evaluate() == "int f(int a) { return a; };"
+
+
+def test_parse_define_function2():
+    assert py2c.parse([Token("def", "def"), Token("name", "f"), Token("(", "("), Token("name", "a"), Token(")", ")"),
+    Token(":", ":"), Token("{", "{"), Token("name", "a"), Token("=", "="), Token("int", 1), Token("\n", "\n"), Token("return", "return"), Token("name", "a"), Token("}", "}")]).evaluate() == "int f(int a) { int a = 1;\nreturn a; };"
+
+
+def test_parse_brace_and_return():
+    assert py2c.parse([Token("def", "def"), Token("name", "f"), Token("(", "("), Token(")", ")"), Token(":", ":"), Token("{", "{"), Token("return", "return"), Token("int", 1), Token("}", "}")]).evaluate() == "int f() { return 1; };"
