@@ -5,6 +5,7 @@ set TEST_SCRIPTS=test_scripts
 
 call:test_script test1.py 42
 call:test_script test2.py 1
+call:test_script test3.py 3
 call:testcase "return 12" 12
 call:testcase "return 42" 42
 call:testcase "return 1+2" 3
