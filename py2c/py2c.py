@@ -122,6 +122,15 @@ class ElseNode:
         return f"else {{ {self.body.evaluate()} }}"
 
 
+class WhileNode:
+    def __init__(self, condition, body):
+        self.condition = condition
+        self.body = body
+
+    def evaluate(self):
+        return f"while ({self.condition.evaluate()}) {{ {self.body.evaluate()} }}"
+
+
 class FunctionCallNode:
     def __init__(self, name, args):
         self.name = name
@@ -217,6 +226,7 @@ def tokenize(code):
         ("elif", Token("elif", "elif")),
         ("else", Token("else", "else")),
         ("return", Token("return", "return")),
+        ("while", Token("while", "while")),
         ("def", Token("def", "def")),
         (":", Token(":", ":")),
         (",", Token(",", ",")),
@@ -391,6 +401,16 @@ def parse(tokens):
                 else_node = ElseNode(brace(tokens))
 
             return IfStatementsNode(if_node, elif_nodes, else_node)
+        elif tokens[0].kind == "while":
+            tokens.pop(0)
+            condition = comp(tokens)
+            if tokens.pop(0).kind != ":":
+                raise Exception("Expected :")
+            while tokens[0].kind == "\n":
+                tokens.pop(0)
+
+            body = brace(tokens)
+            return WhileNode(condition, body)
 
         return expr(tokens)
 
