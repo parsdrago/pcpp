@@ -59,7 +59,7 @@ class DeclarationNode:
         return f"int {self.name.evaluate()} = {self.value.evaluate()}"
 
 
-class IfNode:
+class IfExpressionNode:
     def __init__(self, condition, true_branch, false_branch):
         self.condition = condition
         self.true_branch = true_branch
@@ -85,6 +85,41 @@ class FunctionNode:
 
     def evaluate(self):
         return f"int {self.name}({','.join('int ' + arg  for arg in self.args)}) {{ {self.body.evaluate()} }}"
+
+
+class IfStatementsNode:
+    def __init__(self, if_node, elif_nodes, else_node):
+        self.if_node = if_node
+        self.elif_nodes = elif_nodes
+        self.else_node = else_node
+
+    def evaluate(self):
+        return f"{self.if_node.evaluate()}{''.join(elif_node.evaluate() for elif_node in self.elif_nodes)}{self.else_node.evaluate() if self.else_node else ''}"
+
+class IfNode:
+    def __init__(self, condition, body):
+        self.condition = condition
+        self.body = body
+
+    def evaluate(self):
+        return f"if ({self.condition.evaluate()}) {{ {self.body.evaluate()} }}"
+
+
+class ElifNode:
+    def __init__(self, condition, body):
+        self.condition = condition
+        self.body = body
+
+    def evaluate(self):
+        return f"else if ({self.condition.evaluate()}) {{ {self.body.evaluate()} }}"
+
+
+class ElseNode:
+    def __init__(self, body):
+        self.body = body
+
+    def evaluate(self):
+        return f"else {{ {self.body.evaluate()} }}"
 
 
 class FunctionCallNode:
@@ -179,6 +214,7 @@ def tokenize(code):
         ("!=", Token("!=", "!=")),
         ("==", Token("==", "==")),
         ("if", Token("if", "if")),
+        ("elif", Token("elif", "elif")),
         ("else", Token("else", "else")),
         ("return", Token("return", "return")),
         ("def", Token("def", "def")),
@@ -279,7 +315,7 @@ def parse(tokens):
             if tokens.pop(0).kind != "else":
                 raise Exception("Expected else")
             false_branch = comp(tokens)
-            node = IfNode(condition, node, false_branch)
+            node = IfExpressionNode(condition, node, false_branch)
         elif len(tokens) > 0 and tokens[0].kind == "=":
             tokens.pop(0)
             value = comp(tokens)
@@ -318,6 +354,44 @@ def parse(tokens):
             body = brace(tokens)
             defined_variables.append(name)
             return FunctionNode(name, args, body)
+        elif tokens[0].kind == "if":
+            tokens.pop(0)
+            if_condition = comp(tokens)
+            if tokens.pop(0).kind != ":":
+                raise Exception("Expected :")
+
+            if tokens[0].kind == "\n":
+                tokens.pop(0)
+            if_body = brace(tokens)
+
+            if_node = IfNode(if_condition, if_body)
+            elif_nodes = []
+            while len(tokens) > 0  and tokens[0].kind == "\n":
+                tokens.pop(0)
+            while len(tokens) > 0 and tokens[0].kind == "elif":
+                tokens.pop(0)
+                condition = comp(tokens)
+                if tokens.pop(0).kind != ":":
+                    raise Exception("Expected :")
+                if tokens[0].kind == "\n":
+                    tokens.pop(0)
+                body = brace(tokens)
+                elif_nodes.append(ElifNode(condition, body))
+                while len(tokens) > 0  and tokens[0].kind == "\n":
+                    tokens.pop(0)
+            else_node = None
+            while len(tokens) > 0  and tokens[0].kind == "\n":
+                tokens.pop(0)
+            if len(tokens) > 0 and tokens[0].kind == "else":
+                tokens.pop(0)
+                if tokens.pop(0).kind != ":":
+                    raise Exception("Expected :")
+                if tokens[0].kind == "\n":
+                    tokens.pop(0)
+                else_node = ElseNode(brace(tokens))
+
+            return IfStatementsNode(if_node, elif_nodes, else_node)
+
         return expr(tokens)
 
     def brace(tokens):
