@@ -39,8 +39,8 @@ set TEMP_FILE=%TESTDIR%\test.py
 
 echo %~1 > %TEMP_FILE%
 
-python py2c/py2c.py %TEMP_FILE% --template > %TESTDIR%\test.c
-clang %TESTDIR%\test.c -o %TESTDIR%\test.exe
+python py2c/py2c.py %TEMP_FILE% --template > %TESTDIR%\test.cpp
+clang++ %TESTDIR%\test.cpp -o %TESTDIR%\test.exe
 %TESTDIR%\test.exe
 set ret=%errorlevel%
 if %ret% == %2 (
@@ -55,8 +55,8 @@ exit /b
 :test_script
 mkdir %TESTDIR%
 
-python py2c/py2c.py %TEST_SCRIPTS%\%1 > %TESTDIR%\test.c
-clang %TESTDIR%\test.c -o %TESTDIR%\test.exe
+python py2c/py2c.py %TEST_SCRIPTS%\%1 > %TESTDIR%\test.cpp
+clang++ -std=c++20 %TESTDIR%\test.cpp -o %TESTDIR%\test.exe
 %TESTDIR%\test.exe
 set ret=%errorlevel%
 if %ret% == %2 (

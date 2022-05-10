@@ -54,7 +54,7 @@ class DeclarationNode:
         self.value = value
 
     def evaluate(self):
-        return f"int {self.name.evaluate()} = {self.value.evaluate()}"
+        return f"auto {self.name.evaluate()} = {self.value.evaluate()}"
 
 
 class IfExpressionNode:
@@ -82,7 +82,9 @@ class FunctionNode:
         self.body = body
 
     def evaluate(self):
-        return f"int {self.name}({','.join('int ' + arg  for arg in self.args)}) {{ {self.body.evaluate()} }}"
+        if self.name == "main":
+            return f"int {self.name}({','.join('auto ' + arg  for arg in self.args)}) {{ {self.body.evaluate()} }}"
+        return f"auto {self.name}({','.join('auto ' + arg  for arg in self.args)}) {{ {self.body.evaluate()} }}"
 
 
 class IfStatementsNode:
