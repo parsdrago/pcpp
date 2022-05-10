@@ -1,8 +1,6 @@
 import sys
 
-TEMPLATE = """#include <stdio.h>
-
-int main(void) {
+TEMPLATE = """int main(void) {
     {{STATEMENTS}}
 }"""
 
