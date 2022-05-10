@@ -131,6 +131,16 @@ class WhileNode:
         return f"while ({self.condition.evaluate()}) {{ {self.body.evaluate()} }}"
 
 
+class BreakNode:
+    def evaluate(self):
+        return "break"
+
+
+class ContinueNode:
+    def evaluate(self):
+        return "continue"
+
+
 class FunctionCallNode:
     def __init__(self, name, args):
         self.name = name
@@ -227,6 +237,8 @@ def tokenize(code):
         ("else", Token("else", "else")),
         ("return", Token("return", "return")),
         ("while", Token("while", "while")),
+        ("break", Token("break", "break")),
+        ("continue", Token("continue", "continue")),
         ("def", Token("def", "def")),
         (":", Token(":", ":")),
         (",", Token(",", ",")),
@@ -411,7 +423,12 @@ def parse(tokens):
 
             body = brace(tokens)
             return WhileNode(condition, body)
-
+        elif tokens[0].kind == "break":
+            tokens.pop(0)
+            return BreakNode()
+        elif tokens[0].kind == "continue":
+            tokens.pop(0)
+            return ContinueNode()
         return expr(tokens)
 
     def brace(tokens):
