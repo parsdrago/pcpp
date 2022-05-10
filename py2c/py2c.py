@@ -21,6 +21,14 @@ class StringNode:
         return f"std::string({self.value})"
 
 
+class ListNode:
+    def __init__(self, elements):
+        self.elements = elements
+
+    def evaluate(self):
+        return f'std::vector<int> {{{",".join(elem.evaluate() for elem in self.elements)}}}'
+
+
 class TrueNode:
     def evaluate(self):
         return "true"
@@ -37,6 +45,15 @@ class VariableNode:
 
     def evaluate(self):
         return self.name
+
+
+class ArrayIndexNode:
+    def __init__(self, array, index):
+        self.array = array
+        self.index = index
+
+    def evaluate(self):
+        return f"{self.array}[{self.index.evaluate()}]"
 
 
 class ParenthesisNode:
@@ -272,6 +289,8 @@ def tokenize(code):
         ("}", Token("}", "}")),
         ("True", Token("True", "True")),
         ("False", Token("False", "False")),
+        ("[", Token("[", "[")),
+        ("]", Token("]", "]")),
     ]
     symbols.sort(key=lambda s: len(s[0]), reverse=True)
     tokens = []
@@ -328,7 +347,7 @@ def tokenize(code):
 
 
 def parse(tokens):
-    include_flags = { "string": False }
+    include_flags = { "string": False, "vector": False }
     def atom(tokens):
         token = tokens.pop(0)
         if token.kind == "True":
@@ -347,6 +366,18 @@ def parse(tokens):
         if token.kind == "str":
             include_flags["string"] = True
             return StringNode(token.value)
+        if token.kind == "[":
+            include_flags["vector"] = True
+            elements = []
+            while len(tokens) > 0 and tokens[0].kind != "]":
+                elements.append(expr(tokens))
+                if tokens[0].kind != ",":
+                    break
+                tokens.pop(0)
+            if len(tokens) == 0:
+                raise Exception("Missing ]")
+            tokens.pop(0)
+            return ListNode(elements)
         if token.kind == "name":
             if len(tokens) > 0 and tokens[0].kind == "(":
                 args = []
@@ -360,6 +391,14 @@ def parse(tokens):
                     raise Exception("Missing )")
                 tokens.pop(0)
                 return FunctionCallNode(token.value, args)
+            if len(tokens) > 0 and tokens[0].kind == "[":
+                args = []
+                tokens.pop(0)
+                index = expr(tokens)
+                if tokens[0].kind != "]":
+                    raise Exception("Missing ]")
+                tokens.pop(0)
+                return ArrayIndexNode(token.value, index)
             return VariableNode(token.value)
         raise Exception("Unexpected token: " + token.kind)
 
@@ -521,10 +560,12 @@ def parse(tokens):
 
 
 def evaluate_include_flags(include_flags):
+    includes = ""
     if include_flags["string"]:
-        return "#include <string>\n"
-    else:
-        return ""
+        includes += "#include <string>\n"
+    if include_flags["vector"]:
+        includes += "#include <vector>\n"
+    return includes
 
 
 def main(code, use_template):
