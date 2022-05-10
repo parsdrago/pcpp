@@ -72,7 +72,7 @@ class ReturnNode:
         self.value = value
 
     def evaluate(self):
-        return f"return {self.value.evaluate()}"
+        return f"return {self.value.evaluate()};"
 
 
 class FunctionNode:
@@ -133,12 +133,12 @@ class WhileNode:
 
 class BreakNode:
     def evaluate(self):
-        return "break"
+        return "break;"
 
 
 class ContinueNode:
     def evaluate(self):
-        return "continue"
+        return "continue;"
 
 
 class FunctionCallNode:
@@ -157,6 +157,14 @@ class BraceNode:
     def evaluate(self):
         return self.statements.evaluate()
 
+
+class StatementNode:
+    def __init__(self, statement):
+        self.statement = statement
+
+    def evaluate(self):
+        return self.statement.evaluate() + ";"
+
 class StatementList:
     def __init__(self):
         self.expressions = []
@@ -165,7 +173,7 @@ class StatementList:
         self.expressions.append(expr)
 
     def evaluate(self):
-        return ";\n".join(expr.evaluate() for expr in self.expressions) + ";"
+        return "\n".join(expr.evaluate() for expr in self.expressions)
 
 
 class Token:
@@ -285,7 +293,7 @@ def tokenize(code):
             elif code[i] == " ":
                 i += 1
             else:
-                raise Exception("Unexpected token: " + code[i])
+                raise Exception("Unknown Symbol: " + code[i])
 
     return tokens
 
@@ -441,7 +449,7 @@ def parse(tokens):
         elif tokens[0].kind == "continue":
             tokens.pop(0)
             return ContinueNode()
-        return expr(tokens)
+        return StatementNode(expr(tokens))
 
     def brace(tokens):
         statements = StatementList()
