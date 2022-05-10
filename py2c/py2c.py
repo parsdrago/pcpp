@@ -13,6 +13,14 @@ class AtomicNode:
         return str(self.value)
 
 
+class StringNode:
+    def __init__(self, value):
+        self.value = value
+
+    def evaluate(self):
+        return f"std::string({self.value})"
+
+
 class TrueNode:
     def evaluate(self):
         return "true"
@@ -302,6 +310,15 @@ def tokenize(code):
                     indent_level += 1
                 tokens.append(Token("\n",indent_level))
                 i += 1
+            elif code[i] == "\"":
+                start = i
+                i += 1
+                while i < len(code) and code[i] != "\"":
+                    i += 1
+                if code[i] != "\"":
+                    raise ValueError("invalid string")
+                tokens.append(Token("str", code[start:i+1]))
+                i += 1
             elif code[i] == " ":
                 i += 1
             else:
@@ -311,6 +328,7 @@ def tokenize(code):
 
 
 def parse(tokens):
+    include_flags = { "string": False }
     def atom(tokens):
         token = tokens.pop(0)
         if token.kind == "True":
@@ -326,6 +344,9 @@ def parse(tokens):
             return AtomicNode(token.value)
         if token.kind == "float":
             return AtomicNode(token.value)
+        if token.kind == "str":
+            include_flags["string"] = True
+            return StringNode(token.value)
         if token.kind == "name":
             if len(tokens) > 0 and tokens[0].kind == "(":
                 args = []
@@ -496,18 +517,26 @@ def parse(tokens):
             expr_list.add(node)
         return expr_list
 
-    return statements(tokens)
+    return include_flags, statements(tokens)
+
+
+def evaluate_include_flags(include_flags):
+    if include_flags["string"]:
+        return "#include <string>\n"
+    else:
+        return ""
 
 
 def main(code, use_template):
     unoffsided = unoffside(code)
     tokens = tokenize(unoffsided)
-    parsed = parse(tokens)
+    include_flags, parsed = parse(tokens)
+    inclusion_value = evaluate_include_flags(include_flags)
     value = parsed.evaluate()
     if use_template:
-        print(TEMPLATE.replace("{{STATEMENTS}}", value))
+        print(inclusion_value + TEMPLATE.replace("{{STATEMENTS}}", value))
     else:
-        print(value)
+        print(inclusion_value + value)
 
 if __name__ == "__main__":
     use_template = len(sys.argv) > 1 and "--template" in sys.argv
