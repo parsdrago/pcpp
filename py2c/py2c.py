@@ -13,6 +13,16 @@ class AtomicNode:
         return str(self.value)
 
 
+class TrueNode:
+    def evaluate(self):
+        return "true"
+
+
+class FalseNode:
+    def evaluate(self):
+        return "false"
+
+
 class VariableNode:
     def __init__(self, name):
         self.name = name
@@ -252,6 +262,8 @@ def tokenize(code):
         (",", Token(",", ",")),
         ("{", Token("{", "{")),
         ("}", Token("}", "}")),
+        ("True", Token("True", "True")),
+        ("False", Token("False", "False")),
     ]
     symbols.sort(key=lambda s: len(s[0]), reverse=True)
     tokens = []
@@ -301,6 +313,10 @@ def tokenize(code):
 def parse(tokens):
     def atom(tokens):
         token = tokens.pop(0)
+        if token.kind == "True":
+            return TrueNode()
+        if token.kind == "False":
+            return FalseNode()
         if token.kind == "(":
             result = expr(tokens)
             if tokens.pop(0).kind != ")":
