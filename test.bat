@@ -11,6 +11,7 @@ call:test_script test5.py 42
 call:test_script test6.py 42
 call:test_script test7.py 42
 call:test_script test8.py 42
+call:test_script test9.py 42
 call:testcase "return 12" 12
 call:testcase "return 42" 42
 call:testcase "return 1+2" 3

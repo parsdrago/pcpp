@@ -255,11 +255,21 @@ def tokenize(code):
                 i += len(symbol)
                 break
         else:
-            if code[i] in ["0", "1", "2", "3", "4", "5", "6", "7", "8", "9"]:
+            if code[i].isdigit():
+                dot_exist = False
                 start = i
-                while i < len(code) and code[i] in ["0", "1", "2", "3", "4", "5", "6", "7", "8", "9"]:
+                while i < len(code):
+                    if code[i] == ".":
+                        if dot_exist:
+                            raise ValueError("invalid number")
+                        dot_exist = True
+                    elif not code[i].isdigit():
+                        break
                     i += 1
-                tokens.append(Token("int", int(code[start:i])))
+                if dot_exist:
+                    tokens.append(Token("float", float(code[start:i])))
+                else:
+                    tokens.append(Token("int", int(code[start:i])))
             elif code[i].isalpha() or code[i] == "_":
                 start = i
                 while i < len(code) and (code[i].isalnum() or code[i] == "_"):
@@ -289,6 +299,8 @@ def parse(tokens):
                 raise Exception("Missing )")
             return ParenthesisNode(result)
         if token.kind == "int":
+            return AtomicNode(token.value)
+        if token.kind == "float":
             return AtomicNode(token.value)
         if token.kind == "name":
             if len(tokens) > 0 and tokens[0].kind == "(":
