@@ -40,8 +40,9 @@ class FalseNode:
 
 
 class VariableNode:
-    def __init__(self, name):
+    def __init__(self, name, type = None):
         self.name = name
+        self.type = type
 
     def evaluate(self):
         return self.name
@@ -89,7 +90,7 @@ class DeclarationNode:
         self.value = value
 
     def evaluate(self):
-        return f"auto {self.name.evaluate()} = {self.value.evaluate()}"
+        return f"{self.name.type if self.name.type else 'auto'} {self.name.evaluate()} = {self.value.evaluate()}"
 
 
 class IfExpressionNode:
