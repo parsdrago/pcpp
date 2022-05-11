@@ -115,11 +115,10 @@ class FunctionNode:
         self.name = name
         self.args = args
         self.body = body
+        self.return_type = "int" if name == "main" else "auto"
 
     def evaluate(self):
-        if self.name == "main":
-            return f"int {self.name}({','.join('auto ' + arg  for arg in self.args)}) {{ {self.body.evaluate()} }}"
-        return f"auto {self.name}({','.join('auto ' + arg  for arg in self.args)}) {{ {self.body.evaluate()} }}"
+        return f"{self.return_type} {self.name}({','.join('auto ' + arg.name  for arg in self.args)}) {{ {self.body.evaluate()} }}"
 
 
 class IfStatementsNode:
@@ -221,6 +220,90 @@ class Token:
             return False
         return self.kind == __o.kind and self.value == __o.value
 
+
+class Scope:
+    """
+    A scope is a collection of variables.
+    It has a parent scope, which it inherits variables from.
+    It has a child scope, which it can create new variables in.
+    """
+
+    def __init__(self, parent):
+        self.parent = parent
+        self.variables = {}
+
+    def get(self, name: str):
+        """
+        Get the value of a variable in this scope.
+        If the variable is not found, it will look in the parent scope.
+        If the variable is not found in the parent scope, raise an exception.
+        """
+        if name in self.variables:
+            return self.variables[name]
+
+        if self.parent:
+            return self.parent.get(name)
+
+        raise Exception(f"Variable {name} not found")
+
+    def add(self, name):
+        """
+        Add a variable to this scope.
+
+        If the variable already exists in this scope, raise an exception.
+        """
+
+        if name in self.variables:
+            raise Exception(f"Variable {name} already exists")
+
+        self.variables[name.name] = name
+
+    def __contains__(self, item):
+        return item in self.variables
+    
+
+class ScopeStack:
+    """
+    A stack of scopes.
+    It has a current scope, which it can access.
+    """
+
+    def __init__(self):
+        self.scopes = [Scope(None)]
+
+    def get(self, name: str):
+        """
+        Get the value of a variable in the current scope.
+        If the variable is not found, raise an exception.
+        """
+        return self.scopes[-1].get(name)
+
+    def add(self, name):
+        """
+        Add a variable to the current scope.
+
+        If the variable already exists in the current scope, raise an exception.
+        """
+        self.scopes[-1].add(name)
+
+    def push(self):
+        """
+        Push a new scope onto the stack.
+        """
+        self.scopes.append(Scope(self.scopes[-1]))
+
+    def pop(self):
+        """
+        Pop the current scope off the stack.
+        """
+        self.scopes.pop()
+
+    def __contains__(self, item):
+        """
+        Check if the current scope contains the given variable.
+        """
+        return item in self.scopes[-1]
+        
 
 def unoffside(code):
     """
@@ -348,6 +431,8 @@ def tokenize(code):
 
 def parse(tokens):
     include_flags = { "string": False, "vector": False }
+    scopes = ScopeStack()
+
     def atom(tokens):
         token = tokens.pop(0)
         if token.kind == "True":
@@ -423,8 +508,6 @@ def parse(tokens):
             node = BinaryOperatorNode(token.value, node, addi(tokens))
         return node
 
-    defined_variables = []
-
     def expr(tokens):
         node = comp(tokens)
         if len(tokens) > 0 and tokens[0].kind == "if":
@@ -439,10 +522,10 @@ def parse(tokens):
             value = comp(tokens)
             if not isinstance(node, VariableNode):
                 raise Exception("Expected variable")
-            if node.evaluate() in defined_variables:
+            if node.evaluate() in scopes:
                 node = AssignmentNode(node, value)
             else:
-                defined_variables.append(node.evaluate())
+                scopes.add(node)
                 node = DeclarationNode(node, value)
         return node
 
@@ -453,7 +536,7 @@ def parse(tokens):
         elif tokens[0].kind == "def":
             tokens.pop(0)
             name = tokens.pop(0).value
-            if name in defined_variables:
+            if name in scopes:
                 raise Exception("Variable already defined")
             if tokens.pop(0).kind != "(":
                 raise Exception("Expected (")
@@ -463,15 +546,20 @@ def parse(tokens):
                     raise Exception("Expected variable name")
                 if tokens[0].value in args:
                     raise Exception("Duplicate argument")
-                args.append(tokens.pop(0).value)
+                args.append(VariableNode(tokens.pop(0).value))
             tokens.pop(0)
             if tokens.pop(0).kind != ":":
                 raise Exception("Expected :")
             if tokens[0].kind == "\n":
                 tokens.pop(0)
+            scopes.push()
+            for arg in args:
+                scopes.add(arg)
             body = brace(tokens)
-            defined_variables.append(name)
-            return FunctionNode(name, args, body)
+            scopes.pop()
+            node = FunctionNode(name, args, body)
+            scopes.add(node)
+            return node
         elif tokens[0].kind == "if":
             tokens.pop(0)
             if_condition = comp(tokens)
