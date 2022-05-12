@@ -5,9 +5,19 @@ TEMPLATE = """int main(void) {
 }"""
 
 
-class AtomicNode:
+class IntNode:
     def __init__(self, value):
         self.value = value
+        self.type = "int"
+
+    def evaluate(self):
+        return str(self.value)
+
+
+class FloatNode:
+    def __init__(self, value):
+        self.value = value
+        self.type = "double"
 
     def evaluate(self):
         return str(self.value)
@@ -16,6 +26,7 @@ class AtomicNode:
 class StringNode:
     def __init__(self, value):
         self.value = value
+        self.type = "std::string"
 
     def evaluate(self):
         return f"std::string({self.value})"
@@ -24,34 +35,60 @@ class StringNode:
 class ListNode:
     def __init__(self, elements):
         self.elements = elements
+        self.type = f"std::vector<{elements[0].type}>"
+        self.element_type = elements[0].type
 
     def evaluate(self):
-        return f'std::vector<int> {{{",".join(elem.evaluate() for elem in self.elements)}}}'
+        return f'{self.type} {{{",".join(elem.evaluate() for elem in self.elements)}}}'
 
 
 class TrueNode:
+    def __init__(self):
+        self.type = "bool"
+
     def evaluate(self):
         return "true"
 
 
 class FalseNode:
+    def __init__(self):
+        self.type = "bool"
+
     def evaluate(self):
         return "false"
 
 
 class VariableNode:
-    def __init__(self, name, type = None):
+    def __init__(self, name, variable_type = None):
         self.name = name
-        self.type = type
+        self.type = self._parse_type(variable_type)
+
+    def _parse_type(self, type_str):
+        if type_str == "auto":
+            return "auto"
+        if type_str == "int":
+            return "int"
+        if type_str == "float":
+            return "double"
+        if type_str == "string":
+            return "std::string"
+        if type_str.startswith("list["):
+            return f"std::vector<{self._parse_type(type_str[5:-1])}>"
+        
+        raise ValueError(f"Unknown type {type_str}")
 
     def evaluate(self):
         return self.name
 
 
-class ArrayIndexNode:
-    def __init__(self, array, index):
+class ListElementNode:
+    def __init__(self, array, index, array_type):
         self.array = array
         self.index = index
+        if array_type.startswith("std::vector"):
+            self.type = array_type.split("<")[1].split(">")[0]
+        else:
+            self.type = array_type
 
     def evaluate(self):
         return f"{self.array}[{self.index.evaluate()}]"
@@ -60,6 +97,7 @@ class ArrayIndexNode:
 class ParenthesisNode:
     def __init__(self, inner):
         self.inner = inner
+        self.type = self.inner.type
 
     def evaluate(self):
         return f"({self.inner.evaluate()})"
@@ -71,6 +109,24 @@ class BinaryOperatorNode:
         self.left = left
         self.right = right
 
+        if self.left.type == self.right.type:
+            self.type = self.left.type
+
+        elif self.left.type == "auto":
+            self.type = self.right.type
+
+        elif self.right.type == "auto":
+            self.type = self.left.type
+
+        elif self.left.type == "int" and self.right.type == "double":
+            self.type = "double"
+
+        elif self.left.type == "double" and self.right.type == "int":
+            self.type = "double"
+
+        else:
+            raise Exception(f"Cannot perform {self.operator} on {self.left.type} and {self.right.type}")
+        
     def evaluate(self):
         return f"{self.left.evaluate()} {self.operator} {self.right.evaluate()}"
 
@@ -79,6 +135,7 @@ class AssignmentNode:
     def __init__(self, name, value):
         self.name = name
         self.value = value
+        self.type = self.value.type
 
     def evaluate(self):
         return f"{self.name.evaluate()} = {self.value.evaluate()}"
@@ -88,9 +145,16 @@ class DeclarationNode:
     def __init__(self, name, value):
         self.name = name
         self.value = value
+        self.type = self.value.type
+
+        if self.name.type == "auto":
+            self.name.type = self.value.type
+
+        if self.name.type != self.value.type:
+            raise Exception(f"Type mismatch for {self.name.evaluate()}: {self.name.type} != {self.value.type}")
 
     def evaluate(self):
-        return f"{self.name.type if self.name.type else 'auto'} {self.name.evaluate()} = {self.value.evaluate()}"
+        return f"{self.name.type} {self.name.evaluate()} = {self.value.evaluate()}"
 
 
 class IfExpressionNode:
@@ -98,6 +162,11 @@ class IfExpressionNode:
         self.condition = condition
         self.true_branch = true_branch
         self.false_branch = false_branch
+
+        if self.true_branch.type != self.false_branch.type:
+            raise Exception(f"Type mismatch in if expression: {self.true_branch.type} != {self.false_branch.type}")
+
+        self.type = true_branch.type
 
     def evaluate(self):
         return f"{self.condition.evaluate()} ? {self.true_branch.evaluate()} : {self.false_branch.evaluate()}"
@@ -180,6 +249,7 @@ class FunctionCallNode:
     def __init__(self, name, args):
         self.name = name
         self.args = args
+        self.type = "auto"
 
     def evaluate(self):
         return f"{self.name}({','.join(arg.evaluate() for arg in self.args)})"
@@ -196,6 +266,7 @@ class BraceNode:
 class StatementNode:
     def __init__(self, statement):
         self.statement = statement
+        self.type = self.statement.type
 
     def evaluate(self):
         return self.statement.evaluate() + ";"
@@ -367,6 +438,11 @@ def tokenize(code):
         ("break", Token("break", "break")),
         ("continue", Token("continue", "continue")),
         ("def", Token("def", "def")),
+        ("int", Token("type", "int")),
+        ("float", Token("type", "float")),
+        ("bool", Token("type", "bool")),
+        ("str", Token("type", "str")),
+        ("list", Token("print", "list")),
         (":", Token(":", ":")),
         (",", Token(",", ",")),
         ("{", Token("{", "{")),
@@ -446,9 +522,9 @@ def parse(tokens):
                 raise Exception("Missing )")
             return ParenthesisNode(result)
         if token.kind == "int":
-            return AtomicNode(token.value)
+            return IntNode(token.value)
         if token.kind == "float":
-            return AtomicNode(token.value)
+            return FloatNode(token.value)
         if token.kind == "str":
             include_flags["string"] = True
             return StringNode(token.value)
@@ -484,8 +560,15 @@ def parse(tokens):
                 if tokens[0].kind != "]":
                     raise Exception("Missing ]")
                 tokens.pop(0)
-                return ArrayIndexNode(token.value, index)
-            return VariableNode(token.value)
+                if token.value not in scopes:
+                    raise Exception("Undefined variable: " + token.value)
+                return ListElementNode(token.value, index, scopes.get(token.value).type)
+            if len(tokens) > 0 and tokens[0].kind == ":":
+                tokens.pop(0)
+                if len(tokens) > 0 and tokens[0].kind == "type":
+                    type_token = tokens.pop(0)
+                    return VariableNode(token.value, type_token.value)
+            return VariableNode(token.value, "auto")
         raise Exception("Unexpected token: " + token.kind)
 
     def mul(tokens):
@@ -547,7 +630,15 @@ def parse(tokens):
                     raise Exception("Expected variable name")
                 if tokens[0].value in args:
                     raise Exception("Duplicate argument")
-                args.append(VariableNode(tokens.pop(0).value))
+                name_token = tokens.pop(0)
+                type_token = None
+                if len(tokens) > 0 and tokens[0].kind == ":":
+                    tokens.pop(0)
+                    if len(tokens) > 0 and tokens[0].kind == "type":
+                        type_token = tokens.pop(0)
+                    else:
+                        raise Exception("Expected type")
+                args.append(VariableNode(name_token.value, type_token.value if type_token else "auto"))
             tokens.pop(0)
             if tokens.pop(0).kind != ":":
                 raise Exception("Expected :")

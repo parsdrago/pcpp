@@ -18,6 +18,7 @@ call:test_script test12.py 144
 call:test_script test13.py 0
 call:test_script test14.py 0
 call:test_script test15.py 0
+call:test_script test16.py 0
 call:testcase "return 12" 12
 call:testcase "return 42" 42
 call:testcase "return 1+2" 3
