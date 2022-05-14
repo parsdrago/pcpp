@@ -331,6 +331,9 @@ class Scope:
         self.variables[name.name] = name
 
     def __contains__(self, item):
+        if '[' in item and ']' in item:
+            variable_name = item.split('[')[0]
+            return variable_name in self.variables
         return item in self.variables
     
 
@@ -604,7 +607,7 @@ def parse(tokens):
         elif len(tokens) > 0 and tokens[0].kind == "=":
             tokens.pop(0)
             value = comp(tokens)
-            if not isinstance(node, VariableNode):
+            if not isinstance(node, VariableNode) and not isinstance(node, ListElementNode):
                 raise Exception("Expected variable")
             if node.evaluate() in scopes:
                 node = AssignmentNode(node, value)
