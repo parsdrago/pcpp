@@ -86,11 +86,15 @@ class ListElementNode:
         self.array = array
         self.index = index
         if array_type.startswith("std::vector"):
+            self.is_list = True
             self.type = array_type.split("<")[1].split(">")[0]
         else:
+            self.is_list = False
             self.type = array_type
 
     def evaluate(self):
+        if not self.is_list and self.type == "std::string":
+            return f"{self.array}.substr({self.index.evaluate()}, {self.index.evaluate()} + 1)"
         return f"{self.array}[{self.index.evaluate()}]"
 
 
