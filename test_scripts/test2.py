@@ -1,5 +1,6 @@
 def f():
-    return 1
+    return 42
+
 
 def main():
     return f()

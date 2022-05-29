@@ -1,8 +1,10 @@
 def f():
-    return 1
+    return 40
+
 
 def g(a):
     return a
+
 
 def main():
     return f() + g(2)

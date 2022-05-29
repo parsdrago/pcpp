@@ -59,7 +59,7 @@ class FalseNode:
 
 
 class VariableNode:
-    def __init__(self, name, variable_type = None):
+    def __init__(self, name, variable_type=None):
         self.name = name
         self.type = self._parse_type(variable_type)
 
@@ -74,7 +74,7 @@ class VariableNode:
             return "std::string"
         if type_str.startswith("list["):
             return f"std::vector<{self._parse_type(type_str[5:-1])}>"
-        
+
         raise ValueError(f"Unknown type {type_str}")
 
     def evaluate(self):
@@ -129,8 +129,10 @@ class BinaryOperatorNode:
             self.type = "double"
 
         else:
-            raise Exception(f"Cannot perform {self.operator} on {self.left.type} and {self.right.type}")
-        
+            raise Exception(
+                f"Cannot perform {self.operator} on {self.left.type} and {self.right.type}"
+            )
+
     def evaluate(self):
         return f"{self.left.evaluate()} {self.operator} {self.right.evaluate()}"
 
@@ -155,7 +157,9 @@ class DeclarationNode:
             self.name.type = self.value.type
 
         if self.name.type != self.value.type:
-            raise Exception(f"Type mismatch for {self.name.evaluate()}: {self.name.type} != {self.value.type}")
+            raise Exception(
+                f"Type mismatch for {self.name.evaluate()}: {self.name.type} != {self.value.type}"
+            )
 
     def evaluate(self):
         return f"{self.name.type} {self.name.evaluate()} = {self.value.evaluate()}"
@@ -168,7 +172,9 @@ class IfExpressionNode:
         self.false_branch = false_branch
 
         if self.true_branch.type != self.false_branch.type:
-            raise Exception(f"Type mismatch in if expression: {self.true_branch.type} != {self.false_branch.type}")
+            raise Exception(
+                f"Type mismatch in if expression: {self.true_branch.type} != {self.false_branch.type}"
+            )
 
         self.type = true_branch.type
 
@@ -203,6 +209,7 @@ class IfStatementsNode:
 
     def evaluate(self):
         return f"{self.if_node.evaluate()}{''.join(elif_node.evaluate() for elif_node in self.elif_nodes)}{self.else_node.evaluate() if self.else_node else ''}"
+
 
 class IfNode:
     def __init__(self, condition, body):
@@ -275,6 +282,7 @@ class StatementNode:
     def evaluate(self):
         return self.statement.evaluate() + ";"
 
+
 class StatementList:
     def __init__(self):
         self.expressions = []
@@ -335,11 +343,11 @@ class Scope:
         self.variables[name.name] = name
 
     def __contains__(self, item):
-        if '[' in item and ']' in item:
-            variable_name = item.split('[')[0]
+        if "[" in item and "]" in item:
+            variable_name = item.split("[")[0]
             return variable_name in self.variables
         return item in self.variables
-    
+
 
 class ScopeStack:
     """
@@ -382,7 +390,7 @@ class ScopeStack:
         Check if the current scope contains the given variable.
         """
         return item in self.scopes[-1]
-        
+
 
 def unoffside(code):
     """
@@ -464,7 +472,7 @@ def tokenize(code):
     i = 0
     while i < len(code):
         for symbol, tokenized in symbols:
-            if code[i:i+len(symbol)] == symbol:
+            if code[i : i + len(symbol)] == symbol:
                 tokens.append(tokenized)
                 i += len(symbol)
                 break
@@ -491,19 +499,19 @@ def tokenize(code):
                 tokens.append(Token("name", code[start:i]))
             elif code[i] == "\n":
                 indent_level = 0
-                while i+1 < len(code) and code[i+1] in [" ", "\t"]:
+                while i + 1 < len(code) and code[i + 1] in [" ", "\t"]:
                     i += 1
                     indent_level += 1
-                tokens.append(Token("\n",indent_level))
+                tokens.append(Token("\n", indent_level))
                 i += 1
-            elif code[i] == "\"":
+            elif code[i] == '"':
                 start = i
                 i += 1
-                while i < len(code) and code[i] != "\"":
+                while i < len(code) and code[i] != '"':
                     i += 1
-                if code[i] != "\"":
+                if code[i] != '"':
                     raise ValueError("invalid string")
-                tokens.append(Token("str", code[start:i+1]))
+                tokens.append(Token("str", code[start : i + 1]))
                 i += 1
             elif code[i] == " ":
                 i += 1
@@ -514,7 +522,7 @@ def tokenize(code):
 
 
 def parse(tokens):
-    include_flags = { "string": False, "vector": False }
+    include_flags = {"string": False, "vector": False}
     scopes = ScopeStack()
 
     def atom(tokens):
@@ -594,7 +602,9 @@ def parse(tokens):
 
     def comp(tokens):
         node = addi(tokens)
-        while len(tokens) > 0 and (tokens[0].kind in ["==", "!=", ">", ">=", "<", "<="]):
+        while len(tokens) > 0 and (
+            tokens[0].kind in ["==", "!=", ">", ">=", "<", "<="]
+        ):
             token = tokens.pop(0)
             node = BinaryOperatorNode(token.value, node, addi(tokens))
         return node
@@ -611,7 +621,9 @@ def parse(tokens):
         elif len(tokens) > 0 and tokens[0].kind == "=":
             tokens.pop(0)
             value = comp(tokens)
-            if not isinstance(node, VariableNode) and not isinstance(node, ListElementNode):
+            if not isinstance(node, VariableNode) and not isinstance(
+                node, ListElementNode
+            ):
                 raise Exception("Expected variable")
             if node.evaluate() in scopes:
                 node = AssignmentNode(node, value)
@@ -645,7 +657,11 @@ def parse(tokens):
                         type_token = tokens.pop(0)
                     else:
                         raise Exception("Expected type")
-                args.append(VariableNode(name_token.value, type_token.value if type_token else "auto"))
+                args.append(
+                    VariableNode(
+                        name_token.value, type_token.value if type_token else "auto"
+                    )
+                )
             tokens.pop(0)
             if tokens.pop(0).kind != ":":
                 raise Exception("Expected :")
@@ -671,7 +687,7 @@ def parse(tokens):
 
             if_node = IfNode(if_condition, if_body)
             elif_nodes = []
-            while len(tokens) > 0  and tokens[0].kind == "\n":
+            while len(tokens) > 0 and tokens[0].kind == "\n":
                 tokens.pop(0)
             while len(tokens) > 0 and tokens[0].kind == "elif":
                 tokens.pop(0)
@@ -682,10 +698,10 @@ def parse(tokens):
                     tokens.pop(0)
                 body = brace(tokens)
                 elif_nodes.append(ElifNode(condition, body))
-                while len(tokens) > 0  and tokens[0].kind == "\n":
+                while len(tokens) > 0 and tokens[0].kind == "\n":
                     tokens.pop(0)
             else_node = None
-            while len(tokens) > 0  and tokens[0].kind == "\n":
+            while len(tokens) > 0 and tokens[0].kind == "\n":
                 tokens.pop(0)
             if len(tokens) > 0 and tokens[0].kind == "else":
                 tokens.pop(0)
@@ -755,19 +771,24 @@ def evaluate_include_flags(include_flags):
     return includes
 
 
-def main(code, use_template):
+def transpile_code(code, use_template):
     unoffsided = unoffside(code)
     tokens = tokenize(unoffsided)
     include_flags, parsed = parse(tokens)
     inclusion_value = evaluate_include_flags(include_flags)
     value = parsed.evaluate()
     if use_template:
-        print(inclusion_value + TEMPLATE.replace("{{STATEMENTS}}", value))
+        return inclusion_value + TEMPLATE.replace("{{STATEMENTS}}", value)
     else:
-        print(inclusion_value + value)
+        return inclusion_value + value
+
+
+def main(code, use_template):
+    print(transpile_code(code, use_template))
+
 
 if __name__ == "__main__":
     use_template = len(sys.argv) > 1 and "--template" in sys.argv
-    with open(sys.argv[1], "r", encoding='utf-8') as f:
+    with open(sys.argv[1], "r", encoding="utf-8") as f:
         code = f.read()
         main(code, use_template)

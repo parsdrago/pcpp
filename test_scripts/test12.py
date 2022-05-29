@@ -3,8 +3,10 @@ def fib(n):
         return 1
     if n == 2:
         return 1
-    return fib(n-1) + fib(n-2)
+    return fib(n - 1) + fib(n - 2)
 
 
 def main():
-    return fib(12)
+    if fib(12) == 144:
+        return 42
+    return 1
