@@ -72,7 +72,7 @@ class VariableNode:
             return "double"
         if type_str == "string":
             return "std::string"
-        if type_str.startswith("list["):
+        if type_str.startswith("list[") and type_str.endswith("]"):
             return f"std::vector<{self._parse_type(type_str[5:-1])}>"
 
         raise ValueError(f"Unknown type {type_str}")
@@ -457,7 +457,7 @@ def tokenize(code):
         ("float", Token("type", "float")),
         ("bool", Token("type", "bool")),
         ("str", Token("type", "str")),
-        ("list", Token("print", "list")),
+        ("list", Token("type", "list")),
         (":", Token(":", ":")),
         (",", Token(",", ",")),
         ("{", Token("{", "{")),
@@ -582,6 +582,18 @@ def parse(tokens):
                 tokens.pop(0)
                 if len(tokens) > 0 and tokens[0].kind == "type":
                     type_token = tokens.pop(0)
+                    if type_token.value == "list":
+                        if len(tokens) > 0 and tokens[0].kind != "[":
+                            raise Exception("Missing [")
+                        tokens.pop(0)
+                        item_type = tokens.pop(0)
+                        if item_type.kind != "type":
+                            raise Exception("Invalid type")
+                        if tokens[0].kind != "]":
+                            print(*[token.value for token in tokens])
+                            raise Exception("Missing ]")
+                        tokens.pop(0)
+                        type_token.value = "list[" + item_type.value + "]"
                     return VariableNode(token.value, type_token.value)
             return VariableNode(token.value, "auto")
         raise Exception("Unexpected token: " + token.kind)
