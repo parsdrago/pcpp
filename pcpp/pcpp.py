@@ -1,5 +1,3 @@
-import sys
-
 TEMPLATE = """int main(void) {
     {{STATEMENTS}}
 }"""
@@ -841,10 +839,3 @@ def transpile_code(code, use_template):
 
 def main(code, use_template):
     print(transpile_code(code, use_template))
-
-
-if __name__ == "__main__":
-    use_template = len(sys.argv) > 1 and "--template" in sys.argv
-    with open(sys.argv[1], "r", encoding="utf-8") as f:
-        code = f.read()
-        main(code, use_template)
