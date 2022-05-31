@@ -246,6 +246,17 @@ class WhileNode:
         return f"while ({self.condition.evaluate()}) {{ {self.body.evaluate()} }}"
 
 
+class ForNode:
+    def __init__(self, item_type, item_name, iterable, body):
+        self.item_type = item_type
+        self.item_name = item_name
+        self.iterable = iterable
+        self.body = body
+
+    def evaluate(self):
+        return f"for ({self.item_type} {self.item_name} : {self.iterable.evaluate()}) {{ {self.body.evaluate()} }}"
+
+
 class BreakNode:
     def evaluate(self):
         return "break;"
@@ -303,6 +314,9 @@ class Token:
         if not isinstance(__o, Token):
             return False
         return self.kind == __o.kind and self.value == __o.value
+
+    def __repr__(self) -> str:
+        return f"Token({self.kind}, {self.value})"
 
 
 class Scope:
@@ -450,6 +464,8 @@ def tokenize(code):
         ("else", Token("else", "else")),
         ("return", Token("return", "return")),
         ("while", Token("while", "while")),
+        ("for", Token("for", "for")),
+        ("in", Token("in", "in")),
         ("break", Token("break", "break")),
         ("continue", Token("continue", "continue")),
         ("def", Token("def", "def")),
@@ -590,11 +606,11 @@ def parse(tokens):
                         if item_type.kind != "type":
                             raise Exception("Invalid type")
                         if tokens[0].kind != "]":
-                            print(*[token.value for token in tokens])
                             raise Exception("Missing ]")
                         tokens.pop(0)
                         type_token.value = "list[" + item_type.value + "]"
                     return VariableNode(token.value, type_token.value)
+                tokens.insert(0, Token(":", ":"))
             return VariableNode(token.value, "auto")
         raise Exception("Unexpected token: " + token.kind)
 
@@ -734,6 +750,26 @@ def parse(tokens):
 
             body = brace(tokens)
             return WhileNode(condition, body)
+        elif tokens[0].kind == "for":
+            tokens.pop(0)
+            name = tokens.pop(0)
+            if name.kind != "name":
+                raise Exception("Expected variable name")
+            if tokens.pop(0).kind != "in":
+                raise Exception("Expected in")
+            print(tokens)
+            iterable = atom(tokens)
+            print(tokens)
+
+            if iterable.type != "list" and not isinstance(iterable, VariableNode):
+                raise Exception("Expected list")
+            print(tokens)
+            if tokens.pop(0).kind != ":":
+                raise Exception("Expected :")
+            while tokens[0].kind == "\n":
+                tokens.pop(0)
+            body = brace(tokens)
+            return ForNode(iterable.type, name.value, iterable, body)
         elif tokens[0].kind == "break":
             tokens.pop(0)
             return BreakNode()
