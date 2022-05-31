@@ -837,5 +837,6 @@ def transpile_code(code, use_template):
         return inclusion_value + value
 
 
-def main(code, use_template):
-    print(transpile_code(code, use_template))
+def main(code, output_file, use_template):
+    with open(output_file, "w") as f:
+        f.write(transpile_code(code, use_template))
