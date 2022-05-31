@@ -274,6 +274,19 @@ class FunctionCallNode:
         self.type = "auto"
 
     def evaluate(self):
+        if self.name == "range":
+            if len(self.args) == 1:
+                return (
+                    f'{{ {", ".join(map(str, range(int(self.args[0].evaluate()))))} }}'
+                )
+            elif len(self.args) == 2:
+                return f'{{ {", ".join(map(str, range(int(self.args[0].evaluate()), int(self.args[1].evaluate()))))} }}'
+            elif len(self.args) == 3:
+                return f'{{ {", ".join(map(str, range(int(self.args[0].evaluate()), int(self.args[1].evaluate()), int(self.args[2].evaluate()))))} }}'
+            else:
+                raise Exception(
+                    f"Invalid number of arguments for range: {len(self.args)}"
+                )
         return f"{self.name}({','.join(arg.evaluate() for arg in self.args)})"
 
 
@@ -538,7 +551,7 @@ def tokenize(code):
 
 
 def parse(tokens):
-    include_flags = {"string": False, "vector": False}
+    include_flags = {"string": False, "vector": False, "initializer_list": False}
     scopes = ScopeStack()
 
     def atom(tokens):
@@ -583,6 +596,8 @@ def parse(tokens):
                 if tokens[0].kind != ")":
                     raise Exception("Missing )")
                 tokens.pop(0)
+                if token.value == "range":
+                    include_flags["initializer_list"] = True
                 return FunctionCallNode(token.value, args)
             if len(tokens) > 0 and tokens[0].kind == "[":
                 args = []
@@ -757,13 +772,7 @@ def parse(tokens):
                 raise Exception("Expected variable name")
             if tokens.pop(0).kind != "in":
                 raise Exception("Expected in")
-            print(tokens)
             iterable = atom(tokens)
-            print(tokens)
-
-            if iterable.type != "list" and not isinstance(iterable, VariableNode):
-                raise Exception("Expected list")
-            print(tokens)
             if tokens.pop(0).kind != ":":
                 raise Exception("Expected :")
             while tokens[0].kind == "\n":
@@ -812,10 +821,9 @@ def parse(tokens):
 
 def evaluate_include_flags(include_flags):
     includes = ""
-    if include_flags["string"]:
-        includes += "#include <string>\n"
-    if include_flags["vector"]:
-        includes += "#include <vector>\n"
+    for flag in include_flags:
+        if include_flags[flag]:
+            includes += f"#include <{flag}>\n"
     return includes
 
 

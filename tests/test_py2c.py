@@ -173,8 +173,15 @@ def test_tokenize_newline():
     assert py2c.tokenize("1\n 2") == [Token("int", 1), Token("\n", 1), Token("int", 2)]
 
 
+def test_evaluate_range_function():
+    assert (
+        py2c.FunctionCallNode("range", [py2c.IntNode("5")]).evaluate()
+        == "{ 0, 1, 2, 3, 4 }"
+    )
+
+
 @pytest.mark.parametrize("file_name", glob.glob("./test_scripts/*.py"))
-def test_script(file_name, capfd):
+def test_script(file_name):
     with open(file_name) as f:
         with open("./.test/test.cpp", "w") as fw:
             fw.write(py2c.transpile_code(f.read(), False))
