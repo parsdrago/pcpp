@@ -1,4 +1,6 @@
 import argparse
+import pathlib
+import shutil
 
 import pcpp
 
@@ -11,6 +13,13 @@ if __name__ == "__main__":
     args = parser.parse_args()
     if args.output is None:
         args.output = args.input_file.replace(".py", ".cpp")
+
+    parent_directory = pathlib.Path(args.output).parent
+    parent_directory.mkdir(parents=True, exist_ok=True)
+
+    header_directory = pathlib.Path(__file__).parent
+
+    shutil.copyfile(header_directory / "pcpp.h", parent_directory / "pcpp.h")
 
     with open(args.input_file, "r", encoding="utf-8") as f:
         code = f.read()

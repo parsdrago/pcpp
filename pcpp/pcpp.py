@@ -285,6 +285,7 @@ class FunctionCallNode:
                 raise Exception(
                     f"Invalid number of arguments for range: {len(self.args)}"
                 )
+            return f"pcpp::Range({start}, {end}, {step})"
         return f"{self.name}({','.join(arg.evaluate() for arg in self.args)})"
 
 
@@ -549,7 +550,12 @@ def tokenize(code):
 
 
 def parse(tokens):
-    include_flags = {"string": False, "vector": False, "initializer_list": False}
+    include_flags = {
+        "string": False,
+        "vector": False,
+        "initializer_list": False,
+        "pcpp": False,
+    }
     scopes = ScopeStack()
 
     def atom(tokens):
@@ -595,7 +601,7 @@ def parse(tokens):
                     raise Exception("Missing )")
                 tokens.pop(0)
                 if token.value == "range":
-                    include_flags["initializer_list"] = True
+                    include_flags["pcpp"] = True
                 return FunctionCallNode(token.value, args)
             if len(tokens) > 0 and tokens[0].kind == "[":
                 args = []
@@ -821,7 +827,10 @@ def evaluate_include_flags(include_flags):
     includes = ""
     for flag in include_flags:
         if include_flags[flag]:
-            includes += f"#include <{flag}>\n"
+            if flag == "pcpp":
+                includes += '#include "pcpp.h"\n'
+            else:
+                includes += f"#include <{flag}>\n"
     return includes
 
 

@@ -1,4 +1,5 @@
 import glob
+import shutil
 import subprocess
 
 import pytest
@@ -176,7 +177,7 @@ def test_tokenize_newline():
 def test_evaluate_range_function():
     assert (
         pcpp.FunctionCallNode("range", [pcpp.IntNode("5")]).evaluate()
-        == "{ 0, 1, 2, 3, 4 }"
+        == "pcpp::Range(0, 5, 1)"
     )
 
 
@@ -185,6 +186,8 @@ def test_script(file_name):
     with open(file_name) as f:
         with open("./.test/test.cpp", "w") as fw:
             fw.write(pcpp.transpile_code(f.read(), False))
+
+        shutil.copyfile("./pcpp/pcpp.h", "./.test/pcpp.h")
 
         subprocess.run(
             "clang++ -std=c++20 -o ./.test/test.exe ./.test/test.cpp", check=True
