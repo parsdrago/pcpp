@@ -273,14 +273,21 @@ class FunctionCallNode:
 
     def evaluate(self):
         if self.name == "range":
+            start = None
+            end = None
+            step = None
             if len(self.args) == 1:
-                return (
-                    f'{{ {", ".join(map(str, range(int(self.args[0].evaluate()))))} }}'
-                )
+                start = 0
+                end = int(self.args[0].evaluate())
+                step = 1
             elif len(self.args) == 2:
-                return f'{{ {", ".join(map(str, range(int(self.args[0].evaluate()), int(self.args[1].evaluate()))))} }}'
+                start = int(self.args[0].evaluate())
+                end = int(self.args[1].evaluate())
+                step = 1
             elif len(self.args) == 3:
-                return f'{{ {", ".join(map(str, range(int(self.args[0].evaluate()), int(self.args[1].evaluate()), int(self.args[2].evaluate()))))} }}'
+                start = int(self.args[0].evaluate())
+                end = int(self.args[1].evaluate())
+                step = int(self.args[2].evaluate())
             else:
                 raise Exception(
                     f"Invalid number of arguments for range: {len(self.args)}"
@@ -464,6 +471,11 @@ def tokenize(code):
         ("(", Token("(", "(")),
         (")", Token(")", ")")),
         ("=", Token("=", "=")),
+        ("+=", Token("+=", "+=")),
+        ("-=", Token("-=", "-=")),
+        ("*=", Token("*=", "*=")),
+        ("/=", Token("/=", "/=")),
+        ("%=", Token("%=", "%=")),
         (";", Token(";", ";")),
         ("<", Token("<", "<")),
         (">", Token(">", ">")),
